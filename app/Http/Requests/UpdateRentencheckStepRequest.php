@@ -67,27 +67,44 @@ final class UpdateRentencheckStepRequest extends FormRequest
     }
 
     /**
-     * Step 3: Contract Overview rules
+     * Step 3: Contract Overview rules - Updated for comprehensive contract structure
      */
     private function getStep3Rules(): array
     {
         return [
+            // Pension type checkboxes
             'statutoryPensionClaims' => 'required|boolean',
             'professionalProvisionWorks' => 'required|boolean',
             'publicServiceAdditionalProvision' => 'required|boolean',
             'civilServiceProvision' => 'required|boolean',
+            
+            // Payout contracts with comprehensive fields
             'payoutContracts' => 'array',
-            'payoutContracts.*.type' => 'required|string',
-            'payoutContracts.*.amount' => 'required|numeric|min:0',
-            'payoutContracts.*.description' => 'nullable|string',
+            'payoutContracts.*.contract' => 'required_with:payoutContracts.*|string|max:255',
+            'payoutContracts.*.company' => 'required_with:payoutContracts.*|string|max:255',
+            'payoutContracts.*.contractType' => 'required_with:payoutContracts.*|string|in:Kapital-Lebensvers.,Rentenvers.,Fondsgebundene Lebensvers.,Riester-Rente,Rürup-Rente,Betriebliche Altersvorsorge,Sonstige',
+            'payoutContracts.*.interestRate' => 'required_with:payoutContracts.*|numeric|min:0|max:20',
+            'payoutContracts.*.maturityYear' => 'required_with:payoutContracts.*|integer|min:2024|max:2100',
+            'payoutContracts.*.guaranteedAmount' => 'required_with:payoutContracts.*|numeric|min:0',
+            'payoutContracts.*.projectedAmount' => 'nullable|numeric|min:0',
+            
+            // Pension contracts with comprehensive fields
             'pensionContracts' => 'array',
-            'pensionContracts.*.type' => 'required|string',
-            'pensionContracts.*.amount' => 'required|numeric|min:0',
-            'pensionContracts.*.description' => 'nullable|string',
+            'pensionContracts.*.contract' => 'required_with:pensionContracts.*|string|max:255',
+            'pensionContracts.*.company' => 'required_with:pensionContracts.*|string|max:255',
+            'pensionContracts.*.contractType' => 'required_with:pensionContracts.*|string|in:Kapital-Lebensvers.,Rentenvers.,Fondsgebundene Lebensvers.,Riester-Rente,Rürup-Rente,Betriebliche Altersvorsorge,Sonstige',
+            'pensionContracts.*.interestRate' => 'required_with:pensionContracts.*|numeric|min:0|max:20',
+            'pensionContracts.*.pensionStartYear' => 'required_with:pensionContracts.*|integer|min:2024|max:2100',
+            'pensionContracts.*.guaranteedAmount' => 'required_with:pensionContracts.*|numeric|min:0',
+            'pensionContracts.*.projectedAmount' => 'nullable|numeric|min:0',
+            'pensionContracts.*.monthlyAmount' => 'required_with:pensionContracts.*|numeric|min:0',
+            
+            // Additional income with comprehensive fields
             'additionalIncome' => 'array',
-            'additionalIncome.*.type' => 'required|string',
-            'additionalIncome.*.amount' => 'required|numeric|min:0',
-            'additionalIncome.*.description' => 'nullable|string',
+            'additionalIncome.*.type' => 'required_with:additionalIncome.*|string|max:255',
+            'additionalIncome.*.startYear' => 'required_with:additionalIncome.*|integer|min:2024|max:2100',
+            'additionalIncome.*.amount' => 'required_with:additionalIncome.*|numeric|min:0',
+            'additionalIncome.*.frequency' => 'required_with:additionalIncome.*|string|in:Einmalig,Monatlich,Jährlich',
         ];
     }
 
@@ -174,23 +191,69 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'assumedInflation.min' => 'Die angenommene Inflation muss mindestens 0% betragen.',
             'assumedInflation.max' => 'Die angenommene Inflation darf maximal 10% betragen.',
 
-            // Step 3 messages
+            // Step 3 messages - Updated for comprehensive contract structure
             'statutoryPensionClaims.required' => 'Die Angabe zu gesetzlichen Rentenansprüchen ist erforderlich.',
             'professionalProvisionWorks.required' => 'Die Angabe zur betrieblichen Altersvorsorge ist erforderlich.',
             'publicServiceAdditionalProvision.required' => 'Die Angabe zur öffentlich-rechtlichen Zusatzversorgung ist erforderlich.',
             'civilServiceProvision.required' => 'Die Angabe zur Beamtenversorgung ist erforderlich.',
-            'payoutContracts.*.type.required' => 'Der Vertragstyp ist erforderlich.',
-            'payoutContracts.*.amount.required' => 'Der Betrag ist erforderlich.',
-            'payoutContracts.*.amount.numeric' => 'Der Betrag muss eine Zahl sein.',
-            'payoutContracts.*.amount.min' => 'Der Betrag muss mindestens 0 sein.',
-            'pensionContracts.*.type.required' => 'Der Vertragstyp ist erforderlich.',
-            'pensionContracts.*.amount.required' => 'Der Betrag ist erforderlich.',
-            'pensionContracts.*.amount.numeric' => 'Der Betrag muss eine Zahl sein.',
-            'pensionContracts.*.amount.min' => 'Der Betrag muss mindestens 0 sein.',
-            'additionalIncome.*.type.required' => 'Der Einkommenstyp ist erforderlich.',
-            'additionalIncome.*.amount.required' => 'Der Betrag ist erforderlich.',
+            
+            // Payout contract messages
+            'payoutContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
+            'payoutContracts.*.contract.max' => 'Der Vertragsname darf maximal 255 Zeichen lang sein.',
+            'payoutContracts.*.company.required_with' => 'Die Gesellschaft ist erforderlich.',
+            'payoutContracts.*.company.max' => 'Die Gesellschaft darf maximal 255 Zeichen lang sein.',
+            'payoutContracts.*.contractType.required_with' => 'Die Vertragsart ist erforderlich.',
+            'payoutContracts.*.contractType.in' => 'Die Vertragsart muss eine gültige Option sein.',
+            'payoutContracts.*.interestRate.required_with' => 'Der Zinssatz ist erforderlich.',
+            'payoutContracts.*.interestRate.numeric' => 'Der Zinssatz muss eine Zahl sein.',
+            'payoutContracts.*.interestRate.min' => 'Der Zinssatz muss mindestens 0% betragen.',
+            'payoutContracts.*.interestRate.max' => 'Der Zinssatz darf maximal 20% betragen.',
+            'payoutContracts.*.maturityYear.required_with' => 'Das Ablaufjahr ist erforderlich.',
+            'payoutContracts.*.maturityYear.integer' => 'Das Ablaufjahr muss eine ganze Zahl sein.',
+            'payoutContracts.*.maturityYear.min' => 'Das Ablaufjahr muss mindestens 2024 sein.',
+            'payoutContracts.*.maturityYear.max' => 'Das Ablaufjahr darf maximal 2100 sein.',
+            'payoutContracts.*.guaranteedAmount.required_with' => 'Der garantierte Betrag ist erforderlich.',
+            'payoutContracts.*.guaranteedAmount.numeric' => 'Der garantierte Betrag muss eine Zahl sein.',
+            'payoutContracts.*.guaranteedAmount.min' => 'Der garantierte Betrag muss mindestens 0 sein.',
+            'payoutContracts.*.projectedAmount.numeric' => 'Der prognostizierte Betrag muss eine Zahl sein.',
+            'payoutContracts.*.projectedAmount.min' => 'Der prognostizierte Betrag muss mindestens 0 sein.',
+            
+            // Pension contract messages
+            'pensionContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
+            'pensionContracts.*.contract.max' => 'Der Vertragsname darf maximal 255 Zeichen lang sein.',
+            'pensionContracts.*.company.required_with' => 'Die Gesellschaft ist erforderlich.',
+            'pensionContracts.*.company.max' => 'Die Gesellschaft darf maximal 255 Zeichen lang sein.',
+            'pensionContracts.*.contractType.required_with' => 'Die Vertragsart ist erforderlich.',
+            'pensionContracts.*.contractType.in' => 'Die Vertragsart muss eine gültige Option sein.',
+            'pensionContracts.*.interestRate.required_with' => 'Der Zinssatz ist erforderlich.',
+            'pensionContracts.*.interestRate.numeric' => 'Der Zinssatz muss eine Zahl sein.',
+            'pensionContracts.*.interestRate.min' => 'Der Zinssatz muss mindestens 0% betragen.',
+            'pensionContracts.*.interestRate.max' => 'Der Zinssatz darf maximal 20% betragen.',
+            'pensionContracts.*.pensionStartYear.required_with' => 'Das Rentenbeginn-Jahr ist erforderlich.',
+            'pensionContracts.*.pensionStartYear.integer' => 'Das Rentenbeginn-Jahr muss eine ganze Zahl sein.',
+            'pensionContracts.*.pensionStartYear.min' => 'Das Rentenbeginn-Jahr muss mindestens 2024 sein.',
+            'pensionContracts.*.pensionStartYear.max' => 'Das Rentenbeginn-Jahr darf maximal 2100 sein.',
+            'pensionContracts.*.guaranteedAmount.required_with' => 'Der garantierte Betrag ist erforderlich.',
+            'pensionContracts.*.guaranteedAmount.numeric' => 'Der garantierte Betrag muss eine Zahl sein.',
+            'pensionContracts.*.guaranteedAmount.min' => 'Der garantierte Betrag muss mindestens 0 sein.',
+            'pensionContracts.*.projectedAmount.numeric' => 'Der prognostizierte Betrag muss eine Zahl sein.',
+            'pensionContracts.*.projectedAmount.min' => 'Der prognostizierte Betrag muss mindestens 0 sein.',
+            'pensionContracts.*.monthlyAmount.required_with' => 'Der monatliche Betrag ist erforderlich.',
+            'pensionContracts.*.monthlyAmount.numeric' => 'Der monatliche Betrag muss eine Zahl sein.',
+            'pensionContracts.*.monthlyAmount.min' => 'Der monatliche Betrag muss mindestens 0 sein.',
+            
+            // Additional income messages
+            'additionalIncome.*.type.required_with' => 'Der Einkommenstyp ist erforderlich.',
+            'additionalIncome.*.type.max' => 'Der Einkommenstyp darf maximal 255 Zeichen lang sein.',
+            'additionalIncome.*.startYear.required_with' => 'Das Startjahr ist erforderlich.',
+            'additionalIncome.*.startYear.integer' => 'Das Startjahr muss eine ganze Zahl sein.',
+            'additionalIncome.*.startYear.min' => 'Das Startjahr muss mindestens 2024 sein.',
+            'additionalIncome.*.startYear.max' => 'Das Startjahr darf maximal 2100 sein.',
+            'additionalIncome.*.amount.required_with' => 'Der Betrag ist erforderlich.',
             'additionalIncome.*.amount.numeric' => 'Der Betrag muss eine Zahl sein.',
             'additionalIncome.*.amount.min' => 'Der Betrag muss mindestens 0 sein.',
+            'additionalIncome.*.frequency.required_with' => 'Die Häufigkeit ist erforderlich.',
+            'additionalIncome.*.frequency.in' => 'Die Häufigkeit muss eine gültige Option sein.',
 
             // Step 4 messages
             'aspectRatings.required' => 'Die Bewertungen der wichtigen Aspekte sind erforderlich.',
