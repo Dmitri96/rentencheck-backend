@@ -62,13 +62,8 @@ final class RentencheckService
         try {
             DB::beginTransaction();
 
-            // Update step data
+            // Update step data - this stores the complete data in JSON
             $rentencheck->updateStepData($step, $stepData);
-
-            // Handle contracts for step 3
-            if ($step === 3) {
-                $this->updateContracts($rentencheck, $stepData);
-            }
 
             DB::commit();
             Log::info('Rentencheck step updated', [
@@ -168,33 +163,5 @@ final class RentencheckService
         }
     }
 
-    /**
-     * Update contracts for step 3
-     */
-    private function updateContracts(Rentencheck $rentencheck, array $stepData): void
-    {
-        // Delete existing contracts
-        $rentencheck->contracts()->delete();
 
-        $contractCategories = [
-            'payoutContracts' => 'payout',
-            'pensionContracts' => 'pension',
-            'additionalIncome' => 'additional_income',
-        ];
-
-        foreach ($contractCategories as $key => $category) {
-            $contracts = $stepData[$key] ?? [];
-            
-            foreach ($contracts as $index => $contractData) {
-                RentencheckContract::create([
-                    'rentencheck_id' => $rentencheck->id,
-                    'category' => $category,
-                    'contract_type' => $contractData['type'],
-                    'amount' => $contractData['amount'],
-                    'description' => $contractData['description'] ?? null,
-                    'sort_order' => $index,
-                ]);
-            }
-        }
-    }
 } 

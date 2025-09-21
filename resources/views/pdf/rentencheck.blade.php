@@ -555,6 +555,32 @@
                     </div>
                 </div>
 
+                @if(($rentencheck->step_3_data['statutoryPensionClaims'] ?? false) && (isset($rentencheck->step_3_data['statutoryPensionAmount']) || isset($rentencheck->step_3_data['statutoryPensionAge']) || isset($rentencheck->step_3_data['disabilityPensionAmount'])))
+                <div class="subsection">
+                    <div class="subsection-title">📄 Gesetzliche Rente – Details</div>
+                    <div class="field-row field-row-3">
+                        @if(isset($rentencheck->step_3_data['statutoryPensionAmount']))
+                        <div class="field field-compact">
+                            <div class="field-label">Altersrente (mtl.)</div>
+                            <div class="field-value field-value-large amount-value">{{ number_format($rentencheck->step_3_data['statutoryPensionAmount'] ?? 0, 2, ',', '.') }} €</div>
+                        </div>
+                        @endif
+                        @if(isset($rentencheck->step_3_data['statutoryPensionAge']))
+                        <div class="field field-compact">
+                            <div class="field-label">Altersrente ab Alter</div>
+                            <div class="field-value">{{ $rentencheck->step_3_data['statutoryPensionAge'] }} Jahre</div>
+                        </div>
+                        @endif
+                        @if(isset($rentencheck->step_3_data['disabilityPensionAmount']))
+                        <div class="field field-compact">
+                            <div class="field-label">Erwerbsminderungsrente (mtl.)</div>
+                            <div class="field-value field-value-large amount-value">{{ number_format($rentencheck->step_3_data['disabilityPensionAmount'] ?? 0, 2, ',', '.') }} €</div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
                 <!-- Contracts Tables -->
                 @if(!empty($rentencheck->step_3_data['payoutContracts']) && count($rentencheck->step_3_data['payoutContracts']) > 0)
                 <div class="subsection">

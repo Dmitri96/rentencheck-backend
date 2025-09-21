@@ -12,6 +12,7 @@ use App\Models\Rentencheck;
 use App\Services\RentencheckService;
 use App\Services\ContractManagementService;
 use App\Services\FileService;
+use App\Services\PensionCalculationService;
 use App\Exceptions\Domain\InvalidStepException;
 use App\Exceptions\Domain\RentencheckNotCompleteException;
 use Illuminate\Http\JsonResponse;
@@ -31,7 +32,8 @@ final class RentencheckController extends Controller
     public function __construct(
         private readonly RentencheckService $rentencheckService,
         private readonly ContractManagementService $contractManagementService,
-        private readonly FileService $fileService
+        private readonly FileService $fileService,
+        private readonly PensionCalculationService $pensionCalculationService
     ) {}
 
     /**
@@ -426,6 +428,52 @@ final class RentencheckController extends Controller
             
             return response()->json([
                 'message' => 'Fehler beim Erstellen des PDFs'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get calculated pension data for visualization using dynamic admin parameters
+     */
+    public function getPensionCalculation(Request $request, int $clientId, int $rentencheckId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $client = Client::forUser($user->id)->findOrFail($clientId);
+            
+            $rentencheck = Rentencheck::forUser($user->id)
+                ->forClient($clientId)
+                ->with(['client', 'contracts'])
+                ->findOrFail($rentencheckId);
+
+            // Transform rentencheck data using dynamic parameters from admin panel
+            $calculatedData = $this->pensionCalculationService->transformToPensionData($rentencheck);
+            
+            // Get pension totals for additional insights
+            $pensionTotals = $this->contractManagementService->handleCalculateTotalPensionValue($rentencheck);
+
+            Log::info('Pension calculation completed successfully', [
+                'rentencheck_id' => $rentencheckId,
+                'user_id' => $user->id,
+                'inflation_rate_used' => $calculatedData['parameters_used']['economic_assumptions']['inflation_rate'],
+            ]);
+
+            return response()->json([
+                'pension_data' => $calculatedData,
+                'pension_totals' => $pensionTotals,
+                'client' => $client,
+                'message' => 'Rentenberechnung erfolgreich durchgeführt',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to calculate pension data', [
+                'client_id' => $clientId,
+                'rentencheck_id' => $rentencheckId,
+                'user_id' => $user->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'message' => 'Fehler bei der Rentenberechnung'
             ], 500);
         }
     }

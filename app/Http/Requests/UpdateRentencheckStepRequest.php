@@ -9,6 +9,19 @@ use Illuminate\Foundation\Http\FormRequest;
 final class UpdateRentencheckStepRequest extends FormRequest
 {
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $step = (int) $this->route('step');
+        if ($step === 1) {
+            // Default Kirchensteuer toggle to false if not sent
+            $this->merge([
+                'hasToChurchTax' => $this->has('hasToChurchTax') ? $this->boolean('hasToChurchTax') : false,
+            ]);
+        }
+    }
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -48,6 +61,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'assetSeparation' => 'required|string',
             'healthInsurance' => 'required|string',
             'healthInsuranceContribution' => 'required|numeric|min:0',
+            'hasToChurchTax' => 'nullable|boolean',
         ];
     }
 
@@ -74,15 +88,28 @@ final class UpdateRentencheckStepRequest extends FormRequest
         return [
             // Pension type checkboxes
             'statutoryPensionClaims' => 'required|boolean',
+            'statutoryPensionAge' => 'nullable|integer|min:0|max:100',
+            'statutoryPensionAmount' => 'nullable|numeric|min:0',
+            // New: Erwerbsminderungsrente (monatl. Betrag ohne Alter)
+            'disabilityPensionAmount' => 'nullable|numeric|min:0',
+            
             'professionalProvisionWorks' => 'required|boolean',
+            'professionalProvisionAge' => 'nullable|integer|min:0|max:100',
+            'professionalProvisionAmount' => 'nullable|numeric|min:0',
+            
             'publicServiceAdditionalProvision' => 'required|boolean',
+            'publicServiceProvisionAge' => 'nullable|integer|min:0|max:100',
+            'publicServiceProvisionAmount' => 'nullable|numeric|min:0',
+            
             'civilServiceProvision' => 'required|boolean',
+            'civilServiceProvisionAge' => 'nullable|integer|min:0|max:100',
+            'civilServiceProvisionAmount' => 'nullable|numeric|min:0',
             
             // Payout contracts with comprehensive fields
             'payoutContracts' => 'array',
             'payoutContracts.*.contract' => 'required_with:payoutContracts.*|string|max:255',
             'payoutContracts.*.company' => 'required_with:payoutContracts.*|string|max:255',
-            'payoutContracts.*.contractType' => 'required_with:payoutContracts.*|string|in:Kapital-Lebensvers.,Rentenvers.,Fondsgebundene Lebensvers.,Riester-Rente,Rürup-Rente,Betriebliche Altersvorsorge,Sonstige',
+            'payoutContracts.*.contractType' => 'required_with:payoutContracts.*|string|in:Kapital-Lebensvers.,Rentenvers.,Direktvers.,Investment,andere Art',
             'payoutContracts.*.interestRate' => 'required_with:payoutContracts.*|numeric|min:0|max:20',
             'payoutContracts.*.maturityYear' => 'required_with:payoutContracts.*|integer|min:2024|max:2100',
             'payoutContracts.*.guaranteedAmount' => 'required_with:payoutContracts.*|numeric|min:0',
@@ -92,10 +119,10 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'pensionContracts' => 'array',
             'pensionContracts.*.contract' => 'required_with:pensionContracts.*|string|max:255',
             'pensionContracts.*.company' => 'required_with:pensionContracts.*|string|max:255',
-            'pensionContracts.*.contractType' => 'required_with:pensionContracts.*|string|in:Kapital-Lebensvers.,Rentenvers.,Fondsgebundene Lebensvers.,Riester-Rente,Rürup-Rente,Betriebliche Altersvorsorge,Sonstige',
+            'pensionContracts.*.contractType' => 'required_with:pensionContracts.*|string|in:Basis-Rente,Riester-Rente,BAV-Rente,Mieteinnahme,andere Art',
             'pensionContracts.*.interestRate' => 'required_with:pensionContracts.*|numeric|min:0|max:20',
             'pensionContracts.*.pensionStartYear' => 'required_with:pensionContracts.*|integer|min:2024|max:2100',
-            'pensionContracts.*.guaranteedAmount' => 'required_with:pensionContracts.*|numeric|min:0',
+            'pensionContracts.*.guaranteedAmount' => 'nullable|numeric|min:0',
             'pensionContracts.*.projectedAmount' => 'nullable|numeric|min:0',
             'pensionContracts.*.monthlyAmount' => 'required_with:pensionContracts.*|numeric|min:0',
             
@@ -193,9 +220,34 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
             // Step 3 messages - Updated for comprehensive contract structure
             'statutoryPensionClaims.required' => 'Die Angabe zu gesetzlichen Rentenansprüchen ist erforderlich.',
+            'statutoryPensionAge.integer' => 'Das Alter für gesetzliche Rente muss eine ganze Zahl sein.',
+            'statutoryPensionAge.min' => 'Das Alter für gesetzliche Rente muss mindestens 0 Jahre betragen.',
+            'statutoryPensionAge.max' => 'Das Alter für gesetzliche Rente darf maximal 100 Jahre betragen.',
+            'statutoryPensionAmount.numeric' => 'Der Betrag für gesetzliche Rente muss eine Zahl sein.',
+            'statutoryPensionAmount.min' => 'Der Betrag für gesetzliche Rente muss mindestens 0 sein.',
+            'disabilityPensionAmount.numeric' => 'Der Betrag für Erwerbsminderungsrente muss eine Zahl sein.',
+            'disabilityPensionAmount.min' => 'Der Betrag für Erwerbsminderungsrente muss mindestens 0 sein.',
+            
             'professionalProvisionWorks.required' => 'Die Angabe zur betrieblichen Altersvorsorge ist erforderlich.',
+            'professionalProvisionAge.integer' => 'Das Alter für betriebliche Altersvorsorge muss eine ganze Zahl sein.',
+            'professionalProvisionAge.min' => 'Das Alter für betriebliche Altersvorsorge muss mindestens 0 Jahre betragen.',
+            'professionalProvisionAge.max' => 'Das Alter für betriebliche Altersvorsorge darf maximal 100 Jahre betragen.',
+            'professionalProvisionAmount.numeric' => 'Der Betrag für betriebliche Altersvorsorge muss eine Zahl sein.',
+            'professionalProvisionAmount.min' => 'Der Betrag für betriebliche Altersvorsorge muss mindestens 0 sein.',
+            
             'publicServiceAdditionalProvision.required' => 'Die Angabe zur öffentlich-rechtlichen Zusatzversorgung ist erforderlich.',
+            'publicServiceProvisionAge.integer' => 'Das Alter für öffentlich-rechtliche Zusatzversorgung muss eine ganze Zahl sein.',
+            'publicServiceProvisionAge.min' => 'Das Alter für öffentlich-rechtliche Zusatzversorgung muss mindestens 0 Jahre betragen.',
+            'publicServiceProvisionAge.max' => 'Das Alter für öffentlich-rechtliche Zusatzversorgung darf maximal 100 Jahre betragen.',
+            'publicServiceProvisionAmount.numeric' => 'Der Betrag für öffentlich-rechtliche Zusatzversorgung muss eine Zahl sein.',
+            'publicServiceProvisionAmount.min' => 'Der Betrag für öffentlich-rechtliche Zusatzversorgung muss mindestens 0 sein.',
+            
             'civilServiceProvision.required' => 'Die Angabe zur Beamtenversorgung ist erforderlich.',
+            'civilServiceProvisionAge.integer' => 'Das Alter für Beamtenversorgung muss eine ganze Zahl sein.',
+            'civilServiceProvisionAge.min' => 'Das Alter für Beamtenversorgung muss mindestens 0 Jahre betragen.',
+            'civilServiceProvisionAge.max' => 'Das Alter für Beamtenversorgung darf maximal 100 Jahre betragen.',
+            'civilServiceProvisionAmount.numeric' => 'Der Betrag für Beamtenversorgung muss eine Zahl sein.',
+            'civilServiceProvisionAmount.min' => 'Der Betrag für Beamtenversorgung muss mindestens 0 sein.',
             
             // Payout contract messages
             'payoutContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
@@ -295,6 +347,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'assetSeparation' => 'Gütertrennung',
             'healthInsurance' => 'Krankenversicherung',
             'healthInsuranceContribution' => 'Krankenversicherungsbeitrag',
+            'hasToChurchTax' => 'Kirchensteuerpflicht',
 
             // Step 2 attributes
             'currentAge' => 'Aktuelles Alter',
@@ -306,6 +359,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
             // Step 3 attributes
             'statutoryPensionClaims' => 'Gesetzliche Rentenansprüche',
+            'disabilityPensionAmount' => 'Erwerbsminderungsrente (monatlich)',
             'professionalProvisionWorks' => 'Betriebliche Altersvorsorge',
             'publicServiceAdditionalProvision' => 'Öffentlich-rechtliche Zusatzversorgung',
             'civilServiceProvision' => 'Beamtenversorgung',

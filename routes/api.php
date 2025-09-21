@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\RentencheckController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\PensionSettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FileController;
 use App\Models\User;
@@ -46,6 +47,14 @@ Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADMIN])->prefix('admin')
         Route::patch('/{advisorId}/status', [AdminController::class, 'updateAdvisorStatus']);
         Route::delete('/{advisorId}', [AdminController::class, 'deleteAdvisor']);
     });
+    
+    // Pension Settings management
+    Route::prefix('pension-settings')->group(function () {
+        Route::get('/', [PensionSettingsController::class, 'index']);
+        Route::put('/{id}', [PensionSettingsController::class, 'update']);
+        Route::patch('/bulk-update', [PensionSettingsController::class, 'bulkUpdate']);
+        Route::post('/reset-defaults', [PensionSettingsController::class, 'resetToDefaults']);
+    });
 });
 
 // Advisor routes - for financial advisors and admins
@@ -61,6 +70,7 @@ Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADVISOR . ',' . User::RO
         Route::get('/', [RentencheckController::class, 'index']);
         Route::post('/', [RentencheckController::class, 'store']);
         Route::get('/{rentencheckId}', [RentencheckController::class, 'show']);
+        Route::get('/{rentencheckId}/calculation', [RentencheckController::class, 'getPensionCalculation']);
         Route::put('/{rentencheckId}/step/{step}', [RentencheckController::class, 'updateStep']);
         Route::put('/{rentencheckId}/step/{step}/complete', [RentencheckController::class, 'markStepCompleted']);
         Route::put('/{rentencheckId}/complete', [RentencheckController::class, 'complete']);
@@ -78,4 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'permissions' => $request->user()->getAllPermissions()->pluck('name'),
         ]);
     });
+    
+    // Pension parameters (read-only for calculations)
+    Route::get('/pension-parameters', [PensionSettingsController::class, 'getParameters']);
 }); 
