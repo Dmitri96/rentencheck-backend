@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
  * Defaults match PensionSettingsSeeder so the pipeline degrades gracefully
  * when a key has not been seeded.
  */
-class PensionSettingRepository
+final class PensionSettingRepository
 {
     /**
      * All active settings for a given category, valid as of now.

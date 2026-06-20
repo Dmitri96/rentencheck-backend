@@ -55,12 +55,13 @@ final class PensionSettingsController extends Controller
     }
 
     /**
-     * Get current pension calculation parameters for frontend
+     * Get current pension calculation parameters for frontend.
+     *
+     * Advisor-readable: chart components need tax brackets / insurance rates
+     * to render correctly. Modification still requires admin (see update / bulkUpdate).
      */
     public function getParameters(): JsonResponse
     {
-        //        Gate::authorize('viewAny', PensionSetting::class);
-
         try {
             $parameters = $this->pensionCalculator->parameters();
 

@@ -44,6 +44,13 @@ function assertMatchesGoldenMaster(array $output, string $name): void
     $path = __DIR__ . "/../Fixtures/PensionGoldenMasters/{$name}.json";
     $update = getenv('GOLDEN_UPDATE') === '1';
 
+    // CI must never silently regenerate fixtures — that would mask math drift.
+    if ($update && getenv('CI') === 'true') {
+        throw new RuntimeException(
+            'GOLDEN_UPDATE=1 is forbidden in CI. Regenerate fixtures locally and commit the diff.',
+        );
+    }
+
     if ($update) {
         @mkdir(dirname($path), 0755, true);
         file_put_contents($path, json_encode($output, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
