@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Calculators\PensionCalculator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkUpdatePensionSettingsRequest;
 use App\Http\Requests\UpdatePensionSettingRequest;
 use App\Http\Resources\PensionParametersResource;
 use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
-use App\Services\PensionCalculationService;
 use App\Services\PensionSettingsManagementService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Log;
 final class PensionSettingsController extends Controller
 {
     public function __construct(
-        private readonly PensionCalculationService $pensionCalculationService,
+        private readonly PensionCalculator $pensionCalculator,
         private readonly PensionSettingsManagementService $managementService,
     ) {}
 
@@ -43,7 +43,7 @@ final class PensionSettingsController extends Controller
 
         try {
             $settings = $this->managementService->getFormattedSettingsWithResources();
-            $parameters = $this->pensionCalculationService->getPensionParameters();
+            $parameters = $this->pensionCalculator->parameters();
 
             return $this->successResponse([
                 'data' => $settings,
@@ -62,7 +62,7 @@ final class PensionSettingsController extends Controller
         //        Gate::authorize('viewAny', PensionSetting::class);
 
         try {
-            $parameters = $this->pensionCalculationService->getPensionParameters();
+            $parameters = $this->pensionCalculator->parameters();
 
             return $this->successResponse([
                 'data' => new PensionParametersResource($parameters),
@@ -123,7 +123,7 @@ final class PensionSettingsController extends Controller
                 $request->user()->id,
             );
 
-            $parameters = $this->pensionCalculationService->getPensionParameters();
+            $parameters = $this->pensionCalculator->parameters();
 
             return $this->successResponse([
                 'data' => PensionSettingResource::collection($updatedSettings),
@@ -146,7 +146,7 @@ final class PensionSettingsController extends Controller
 
         try {
             $updatedCount = $this->managementService->resetToDefaults(request()->user()->id);
-            $parameters = $this->pensionCalculationService->getPensionParameters();
+            $parameters = $this->pensionCalculator->parameters();
 
             return $this->successResponse([
                 'current_parameters' => new PensionParametersResource($parameters),

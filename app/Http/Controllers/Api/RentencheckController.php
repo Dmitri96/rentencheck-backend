@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Calculators\PensionCalculator;
 use App\Exceptions\Domain\InvalidStepException;
 use App\Exceptions\Domain\RentencheckNotCompleteException;
 use App\Http\Controllers\Controller;
@@ -13,7 +14,6 @@ use App\Models\Client;
 use App\Models\Rentencheck;
 use App\Services\ContractManagementService;
 use App\Services\FileService;
-use App\Services\PensionCalculationService;
 use App\Services\RentencheckService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +33,7 @@ final class RentencheckController extends Controller
         private readonly RentencheckService $rentencheckService,
         private readonly ContractManagementService $contractManagementService,
         private readonly FileService $fileService,
-        private readonly PensionCalculationService $pensionCalculationService,
+        private readonly PensionCalculator $pensionCalculator,
     ) {}
 
     /**
@@ -447,7 +447,7 @@ final class RentencheckController extends Controller
                 ->findOrFail($rentencheckId);
 
             // Transform rentencheck data using dynamic parameters from admin panel
-            $calculatedData = $this->pensionCalculationService->transformToPensionData($rentencheck);
+            $calculatedData = $this->pensionCalculator->analyze($rentencheck);
 
             // Get pension totals for additional insights
             $pensionTotals = $this->contractManagementService->handleCalculateTotalPensionValue($rentencheck);

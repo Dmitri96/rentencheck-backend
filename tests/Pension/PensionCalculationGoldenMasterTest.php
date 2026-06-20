@@ -19,8 +19,10 @@ declare(strict_types=1);
  * production-default rates (inflation 2%, investment 3%, etc).
  */
 
+use App\Calculators\PensionCalculator;
+use App\Calculators\TaxCalculator;
 use App\Models\Rentencheck;
-use App\Services\PensionCalculationService;
+use App\Repositories\PensionSettingRepository;
 use Database\Seeders\PensionSettingsSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
@@ -28,7 +30,9 @@ uses(LazilyRefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(PensionSettingsSeeder::class);
-    $this->service = app(PensionCalculationService::class);
+    $this->calculator = app(PensionCalculator::class);
+    $this->taxCalculator = app(TaxCalculator::class);
+    $this->settings = app(PensionSettingRepository::class);
 });
 
 /**
@@ -149,7 +153,7 @@ $rentencheckScenarios = [
 foreach ($rentencheckScenarios as $name => [$step2, $step3]) {
     it("locks transformToPensionData: {$name}", function () use ($name, $step2, $step3): void {
         $rc = makeRentencheck($step2, $step3);
-        $output = $this->service->transformToPensionData($rc);
+        $output = $this->calculator->analyze($rc);
         assertMatchesGoldenMaster($output, "transform_{$name}");
     });
 }
@@ -159,7 +163,7 @@ foreach ($rentencheckScenarios as $name => [$step2, $step3]) {
 // ---------------------------------------------------------------------
 
 it('exposes pension parameters with seeded defaults', function (): void {
-    $output = $this->service->getPensionParameters();
+    $output = $this->calculator->parameters();
     assertMatchesGoldenMaster($output, 'parameters_seeded_defaults');
 });
 
@@ -178,7 +182,7 @@ $taxScenarios = [
 
 foreach ($taxScenarios as $name => $income) {
     it("locks calculateIncomeTax: {$name}", function () use ($name, $income): void {
-        $output = ['income_tax' => $this->service->calculateIncomeTax($income)];
+        $output = ['income_tax' => $this->taxCalculator->incomeTax($income, $this->settings->getTaxBrackets())];
         assertMatchesGoldenMaster($output, "income_tax_{$name}");
     });
 }

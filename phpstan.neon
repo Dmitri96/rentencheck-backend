@@ -7,4 +7,5 @@ parameters:
         - app
     level: 7
     tmpDir: storage/framework/phpstan
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors: []

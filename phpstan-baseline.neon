@@ -1159,24 +1159,6 @@ parameters:
 			path: app/Services/FileService.php
 
 		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:getPensionParameters\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:transformToPensionData\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Parameter \#2 \$brackets of method App\\Calculators\\TaxCalculator\:\:incomeTax\(\) expects array\{rates\: array\<string, float\>, thresholds\: array\<string, float\>\}, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
 			message: '#^Call to an undefined method App\\Models\\PensionSetting\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\PensionSetting\>\:\:update\(\)\.$#'
 			identifier: method.notFound
 			count: 1
