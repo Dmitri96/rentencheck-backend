@@ -1,0 +1,57 @@
+{
+    "currentAge": 35,
+    "inflationRate": 2,
+    "retirementAge": 67,
+    "lifeExpectancy": 85,
+    "desiredPensionToday": 2500,
+    "desiredPensionRetirement": 4711.351480252825,
+    "desiredPensionLifeExpectancy": 6728.970072684019,
+    "legalPensionToday": 0,
+    "legalPensionRetirement": 0,
+    "statutoryPensionGross": 850,
+    "statutoryPensionAfterInsurance": 746.725,
+    "statutoryPensionPurchasingPower": 396.2371535693238,
+    "privatePensionToday": 0,
+    "privatePensionRetirement": 0,
+    "bavRiesterToday": 450,
+    "bavRiesterRetirement": 848.0432664455086,
+    "parameters_used": {
+        "economic_assumptions": {
+            "inflation_rate": 2,
+            "pension_increase_rate": 1,
+            "investment_return_rate": 3
+        },
+        "social_insurance": {
+            "health_insurance_rate": 7.3,
+            "additional_health_insurance_rate": 1.25,
+            "care_insurance_rate": 3.6,
+            "total_insurance_rate": 12.15,
+            "health_insurance_exemption_bav": 187.25
+        },
+        "tax_system": {
+            "rates": {
+                "stufe_1": 0,
+                "stufe_2": 14,
+                "stufe_3": 24,
+                "stufe_4": 42,
+                "stufe_5": 45
+            },
+            "thresholds": {
+                "threshold_1": 12097,
+                "threshold_2": 17444,
+                "threshold_3": 68481,
+                "threshold_4": 277826
+            },
+            "solidarity_surcharge_rate": 5.5,
+            "solidarity_surcharge_threshold": 19450
+        },
+        "regional_taxes": {
+            "church_tax_bavaria_bw": 8,
+            "church_tax_other_states": 9
+        },
+        "demographics": {
+            "retirement_age": 67,
+            "life_expectancy": 85
+        }
+    }
+}
