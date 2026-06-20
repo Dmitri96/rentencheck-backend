@@ -1,0 +1,56 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, 'refactor/**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: lint + analyse + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, fileinfo, pdo, pdo_sqlite, sqlite3, intl, bcmath
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare env
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Pint (format check)
+        run: composer lint:check
+
+      - name: Larastan (static analysis)
+        run: composer analyse
+
+      - name: Pest (tests)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: composer test
