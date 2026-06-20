@@ -14,16 +14,10 @@ use Illuminate\Support\Facades\Log;
 /**
  * ContractManagementService
  *
- * Handles all business logic for contract management in the pension analysis system.
- * This service follows clean architecture principles with proper separation of concerns,
- * comprehensive error handling, and transaction management for data integrity.
- *
- * Key responsibilities:
- * - Contract CRUD operations with validation
- * - Bulk contract updates with transaction safety
- * - Business rule enforcement
- * - Data transformation between frontend and backend
- * - Pension calculation support
+ * @deprecated 510 LOC god class. Callers must depend on the
+ * App\Actions\Contracts\* actions instead of this service directly.
+ * A follow-up commit will move the per-category creation / validation loops
+ * into those actions and delete this class.
  */
 final class ContractManagementService
 {

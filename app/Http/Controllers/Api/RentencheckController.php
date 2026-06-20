@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Contracts\CalculateTotalPensionValueAction;
+use App\Actions\Contracts\GetContractsByCategoryAction;
+use App\Actions\Contracts\UpdateContractsForStepAction;
+use App\Actions\Contracts\ValidateContractDataAction;
 use App\Calculators\PensionCalculator;
 use App\Exceptions\Domain\InvalidStepException;
 use App\Exceptions\Domain\RentencheckNotCompleteException;
@@ -12,7 +16,6 @@ use App\Http\Requests\StoreRentencheckRequest;
 use App\Http\Requests\UpdateRentencheckStepRequest;
 use App\Models\Client;
 use App\Models\Rentencheck;
-use App\Services\ContractManagementService;
 use App\Services\FileService;
 use App\Services\RentencheckService;
 use Illuminate\Http\JsonResponse;
@@ -31,7 +34,10 @@ final class RentencheckController extends Controller
 {
     public function __construct(
         private readonly RentencheckService $rentencheckService,
-        private readonly ContractManagementService $contractManagementService,
+        private readonly UpdateContractsForStepAction $updateContractsAction,
+        private readonly ValidateContractDataAction $validateContractsAction,
+        private readonly GetContractsByCategoryAction $getContractsAction,
+        private readonly CalculateTotalPensionValueAction $calculatePensionTotalsAction,
         private readonly FileService $fileService,
         private readonly PensionCalculator $pensionCalculator,
     ) {}
@@ -83,10 +89,10 @@ final class RentencheckController extends Controller
                 ->findOrFail($rentencheckId);
 
             // Get contracts organized by category using the service
-            $contracts = $this->contractManagementService->handleGetContractsByCategory($rentencheck);
+            $contracts = $this->getContractsAction->execute($rentencheck);
 
             // Calculate pension totals for additional insights
-            $pensionTotals = $this->contractManagementService->handleCalculateTotalPensionValue($rentencheck);
+            $pensionTotals = $this->calculatePensionTotalsAction->execute($rentencheck);
 
             return response()->json([
                 'rentencheck' => $rentencheck,
@@ -212,7 +218,7 @@ final class RentencheckController extends Controller
     {
         try {
             // Additional business validation for contract data
-            $contractValidationErrors = $this->contractManagementService->handleValidateContractData($validatedData);
+            $contractValidationErrors = $this->validateContractsAction->execute($validatedData);
 
             if (! empty($contractValidationErrors)) {
                 return response()->json([
@@ -222,10 +228,7 @@ final class RentencheckController extends Controller
             }
 
             // Process contracts with the specialized service
-            $contractResults = $this->contractManagementService->handleUpdateContractsForStep(
-                $rentencheck,
-                $validatedData,
-            );
+            $contractResults = $this->updateContractsAction->execute($rentencheck, $validatedData);
 
             // Update the step data in the rentencheck
             $updatedRentencheck = $this->rentencheckService->updateStep(
@@ -450,7 +453,7 @@ final class RentencheckController extends Controller
             $calculatedData = $this->pensionCalculator->analyze($rentencheck);
 
             // Get pension totals for additional insights
-            $pensionTotals = $this->contractManagementService->handleCalculateTotalPensionValue($rentencheck);
+            $pensionTotals = $this->calculatePensionTotalsAction->execute($rentencheck);
 
             Log::info('Pension calculation completed successfully', [
                 'rentencheck_id' => $rentencheckId,
