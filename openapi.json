@@ -1998,11 +1998,10 @@
                                             "type": "object",
                                             "properties": {
                                                 "currentAge": {
-                                                    "type": "integer",
-                                                    "description": "General Settings (using dynamic parameters)"
+                                                    "type": "integer"
                                                 },
                                                 "inflationRate": {
-                                                    "type": "string"
+                                                    "type": "number"
                                                 },
                                                 "retirementAge": {
                                                     "type": "integer"
@@ -2012,8 +2011,7 @@
                                                     "const": 85
                                                 },
                                                 "desiredPensionToday": {
-                                                    "type": "number",
-                                                    "description": "Desired Pension"
+                                                    "type": "number"
                                                 },
                                                 "desiredPensionRetirement": {
                                                     "type": "number"
@@ -2022,8 +2020,7 @@
                                                     "type": "number"
                                                 },
                                                 "legalPensionToday": {
-                                                    "type": "number",
-                                                    "description": "Legal Pension (using dynamic calculations)"
+                                                    "type": "number"
                                                 },
                                                 "legalPensionRetirement": {
                                                     "type": "number"
@@ -2038,34 +2035,31 @@
                                                     "type": "number"
                                                 },
                                                 "privatePensionToday": {
-                                                    "type": "number",
-                                                    "description": "Private Pension"
+                                                    "type": "number"
                                                 },
                                                 "privatePensionRetirement": {
                                                     "type": "number"
                                                 },
                                                 "bavRiesterToday": {
-                                                    "type": "number",
-                                                    "description": "BAV/Riester"
+                                                    "type": "number"
                                                 },
                                                 "bavRiesterRetirement": {
                                                     "type": "number"
                                                 },
                                                 "parameters_used": {
                                                     "type": "object",
-                                                    "description": "Include current parameters used for transparency",
                                                     "properties": {
                                                         "economic_assumptions": {
                                                             "type": "object",
                                                             "properties": {
                                                                 "inflation_rate": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 },
                                                                 "pension_increase_rate": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 },
                                                                 "investment_return_rate": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 }
                                                             },
                                                             "required": [
@@ -2078,19 +2072,19 @@
                                                             "type": "object",
                                                             "properties": {
                                                                 "health_insurance_rate": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 },
                                                                 "additional_health_insurance_rate": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 },
                                                                 "care_insurance_rate": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 },
                                                                 "total_insurance_rate": {
                                                                     "type": "string"
                                                                 },
                                                                 "health_insurance_exemption_bav": {
-                                                                    "type": "string"
+                                                                    "type": "number"
                                                                 }
                                                             },
                                                             "required": [
@@ -2105,10 +2099,54 @@
                                                             "type": "object",
                                                             "properties": {
                                                                 "rates": {
-                                                                    "type": "string"
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "stufe_1": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "stufe_2": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "stufe_3": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "stufe_4": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "stufe_5": {
+                                                                            "type": "number"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "stufe_1",
+                                                                        "stufe_2",
+                                                                        "stufe_3",
+                                                                        "stufe_4",
+                                                                        "stufe_5"
+                                                                    ]
                                                                 },
                                                                 "thresholds": {
-                                                                    "type": "string"
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "threshold_1": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "threshold_2": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "threshold_3": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "threshold_4": {
+                                                                            "type": "number"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "threshold_1",
+                                                                        "threshold_2",
+                                                                        "threshold_3",
+                                                                        "threshold_4"
+                                                                    ]
                                                                 },
                                                                 "solidarity_surcharge_rate": {
                                                                     "type": "number"
