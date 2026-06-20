@@ -4,203 +4,89 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Actions\Clients\CreateClientAction;
+use App\Actions\Clients\DeleteClientAction;
+use App\Actions\Clients\UpdateClientAction;
+use App\Data\Clients\ClientData;
+use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Resources\ClientResource;
 use App\Models\Client;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
-final class ClientController extends Controller
+/**
+ * Thin HTTP layer for client CRUD.
+ *
+ * - Validation lives in StoreClientRequest (request-time).
+ * - Authorization lives in ClientPolicy ($this->authorize calls).
+ * - Business logic lives in app/Actions/Clients/*.
+ * - Error/transaction handling lives in the global exception renderer
+ *   (bootstrap/app.php) and the per-Action DB::transaction wrappers.
+ */
+final class ClientController extends BaseApiController
 {
-    /**
-     * Display a listing of clients based on user role.
-     */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Client::query();
+        $this->authorize('viewAny', Client::class);
 
-        // Admins can see all clients, advisors only see their own
-        if (! $request->user()->isAdmin()) {
-            $query->forUser($request->user()->id);
-        }
-
-        $clients = $query->active()
-            ->with('user') // Include user relationship for admin view
+        $query = Client::query()
+            ->when(
+                ! $request->user()->isAdmin(),
+                fn ($q) => $q->forUser($request->user()->id),
+            )
+            ->active()
+            ->with('user')
             ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->paginate(15);
+            ->orderBy('first_name');
 
-        return ClientResource::collection($clients);
+        return ClientResource::collection($query->paginate(15));
     }
 
-    /**
-     * Store a newly created client.
-     */
-    public function store(StoreClientRequest $request): JsonResponse
+    public function store(StoreClientRequest $request, CreateClientAction $action): JsonResponse
     {
-        try {
-            DB::beginTransaction();
+        $this->authorize('create', Client::class);
 
-            $client = Client::create([
-                'user_id' => $request->user()->id,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'street' => $request->street,
-                'city' => $request->city,
-                'postal_code' => $request->postal_code,
-                'birth_date' => $request->birth_date,
-                'notes' => $request->notes,
-            ]);
+        $client = $action->execute(
+            ClientData::from($request->validated()),
+            $request->user(),
+        );
 
-            DB::commit();
-
-            Log::info('Client created successfully', [
-                'client_id' => $client->id,
-                'user_id' => $request->user()->id,
-                'client_email' => $client->email,
-            ]);
-
-            return response()->json([
-                'client' => new ClientResource($client),
-                'message' => 'Mandant erfolgreich angelegt',
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Failed to create client', [
-                'user_id' => $request->user()->id,
-                'error' => $e->getMessage(),
-                'data' => $request->validated(),
-            ]);
-
-            return response()->json([
-                'message' => 'Ein Fehler ist beim Anlegen des Mandanten aufgetreten',
-                'error' => 'Interner Serverfehler',
-            ], 500);
-        }
+        return $this->createdResponse(
+            new ClientResource($client),
+            'Mandant erfolgreich angelegt',
+        );
     }
 
-    /**
-     * Display the specified client.
-     */
-    public function show(Request $request, Client $client): JsonResponse
+    public function show(Client $client): JsonResponse
     {
-        // Ensure the client belongs to the authenticated user (unless admin)
-        if (! $request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Mandant nicht gefunden',
-            ], 404);
-        }
+        $this->authorize('view', $client);
 
-        return response()->json([
-            'client' => new ClientResource($client->load('user')),
-        ]);
+        return $this->successResponse(new ClientResource($client->load('user')));
     }
 
-    /**
-     * Update the specified client.
-     */
-    public function update(StoreClientRequest $request, Client $client): JsonResponse
+    public function update(StoreClientRequest $request, Client $client, UpdateClientAction $action): JsonResponse
     {
-        // Ensure the client belongs to the authenticated user (unless admin)
-        if (! $request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Mandant nicht gefunden',
-            ], 404);
-        }
+        $this->authorize('update', $client);
 
-        try {
-            DB::beginTransaction();
+        $updated = $action->execute($client, ClientData::from($request->validated()));
 
-            $client->update([
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'street' => $request->street,
-                'city' => $request->city,
-                'postal_code' => $request->postal_code,
-                'birth_date' => $request->birth_date,
-                'notes' => $request->notes,
-            ]);
-
-            DB::commit();
-
-            Log::info('Client updated successfully', [
-                'client_id' => $client->id,
-                'user_id' => $request->user()->id,
-            ]);
-
-            return response()->json([
-                'client' => new ClientResource($client->fresh()),
-                'message' => 'Mandant erfolgreich aktualisiert',
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Failed to update client', [
-                'client_id' => $client->id,
-                'user_id' => $request->user()->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Ein Fehler ist beim Aktualisieren des Mandanten aufgetreten',
-                'error' => 'Interner Serverfehler',
-            ], 500);
-        }
+        return $this->successResponse(
+            new ClientResource($updated),
+            'Mandant erfolgreich aktualisiert',
+        );
     }
 
-    /**
-     * Remove the specified client (soft delete by marking as inactive).
-     */
-    public function destroy(Request $request, Client $client): JsonResponse
+    public function destroy(Client $client, DeleteClientAction $action): JsonResponse
     {
-        // Ensure the client belongs to the authenticated user (unless admin)
-        if (! $request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Mandant nicht gefunden',
-            ], 404);
-        }
+        $this->authorize('delete', $client);
 
-        try {
-            DB::beginTransaction();
+        $action->execute($client);
 
-            $client->update(['is_active' => false]);
-
-            DB::commit();
-
-            Log::info('Client deactivated successfully', [
-                'client_id' => $client->id,
-                'user_id' => $request->user()->id,
-            ]);
-
-            return response()->json([
-                'message' => 'Mandant erfolgreich deaktiviert',
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Failed to deactivate client', [
-                'client_id' => $client->id,
-                'user_id' => $request->user()->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Ein Fehler ist beim Deaktivieren des Mandanten aufgetreten',
-                'error' => 'Interner Serverfehler',
-            ], 500);
-        }
+        return $this->successResponse(
+            ['id' => $client->id],
+            'Mandant erfolgreich deaktiviert',
+        );
     }
 }

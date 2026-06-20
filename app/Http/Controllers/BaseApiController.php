@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -18,6 +19,8 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
  */
 abstract class BaseApiController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * 200 OK with a consistent envelope.
      *
