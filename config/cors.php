@@ -19,9 +19,15 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000')],
+    // Accept a comma-separated list of frontend origins via FRONTEND_URL so
+    // dev servers running on different ports (3000, 3002, ...) all pass CORS.
+    'allowed_origins' => array_map('trim', explode(',', env('FRONTEND_URL', 'http://localhost:3000'))),
 
-    'allowed_origins_patterns' => [],
+    // Allow any localhost / 127.0.0.1 port in non-production to avoid the
+    // classic "frontend on a different port than configured" CORS trap.
+    'allowed_origins_patterns' => env('APP_ENV') === 'production'
+        ? []
+        : ['#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#'],
 
     'allowed_headers' => ['*'],
 
