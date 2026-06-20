@@ -153,6 +153,9 @@ final class PensionCalculator
      * also matched "Privatrente" and double-counted it across legal + private
      * columns of the advisor's chart.
      */
+    /**
+     * @param  array<string, mixed>  $step3
+     */
     private function extractLegalPension(array $step3): float
     {
         if (! ($step3['statutoryPensionClaims'] ?? false)) {
@@ -172,6 +175,9 @@ final class PensionCalculator
 
     /**
      * Sum of contracts identified as private pension entries from step 3 data.
+     */
+    /**
+     * @param  array<string, mixed>  $step3
      */
     private function extractPrivatePension(array $step3): float
     {
@@ -194,6 +200,9 @@ final class PensionCalculator
     /**
      * Sum of BAV / Riester contracts from step 3 data. Returns 0 when
      * professional provision isn't asserted.
+     */
+    /**
+     * @param  array<string, mixed>  $step3
      */
     private function extractBavRiester(array $step3): float
     {
