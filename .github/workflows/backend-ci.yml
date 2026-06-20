@@ -49,6 +49,9 @@ jobs:
       - name: Larastan (static analysis)
         run: composer analyse
 
+      - name: OpenAPI drift check
+        run: composer openapi:check
+
       - name: Pest (tests)
         env:
           DB_CONNECTION: sqlite
