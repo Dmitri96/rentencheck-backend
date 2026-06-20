@@ -42,4 +42,4 @@ final class UserResource extends JsonResource
             'updated_at' => $this->updated_at->toIso8601String(),
         ];
     }
-} 
+}

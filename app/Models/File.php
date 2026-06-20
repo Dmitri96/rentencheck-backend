@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 
 class File extends Model
 {
@@ -66,7 +65,7 @@ class File extends Model
         if ($this->is_public) {
             return Storage::disk($this->disk)->url($this->path);
         }
-        
+
         // For private files, we'll need a signed URL or controller route
         return route('file.download', ['file' => $this->id]);
     }
@@ -78,11 +77,11 @@ class File extends Model
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $size = $this->size;
-        
+
         for ($i = 0; $size > 1024 && $i < count($units) - 1; $i++) {
             $size /= 1024;
         }
-        
+
         return round($size, 2) . ' ' . $units[$i];
     }
 
@@ -110,7 +109,7 @@ class File extends Model
         if ($this->exists()) {
             Storage::disk($this->disk)->delete($this->path);
         }
-        
+
         return $this->delete();
     }
 
@@ -155,13 +154,13 @@ class File extends Model
         int $userId,
         string $type = 'document',
         ?string $description = null,
-        bool $isPublic = false
+        bool $isPublic = false,
     ): self {
         $filename = uniqid() . '.' . $uploadedFile->getClientOriginalExtension();
         $path = $uploadedFile->storeAs(
             "files/{$type}/" . date('Y/m'),
             $filename,
-            'local'
+            'local',
         );
 
         return self::create([
@@ -193,12 +192,12 @@ class File extends Model
         int $userId,
         string $type = 'document',
         ?string $description = null,
-        bool $isPublic = false
+        bool $isPublic = false,
     ): self {
         $extension = pathinfo($originalName, PATHINFO_EXTENSION);
         $filename = uniqid() . '.' . $extension;
         $path = "files/{$type}/" . date('Y/m') . "/{$filename}";
-        
+
         // Store the content
         Storage::disk('local')->put($path, $content);
 

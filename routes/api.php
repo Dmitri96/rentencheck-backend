@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\ClientController;
-use App\Http\Controllers\Api\RentencheckController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\PensionSettingsController;
+use App\Http\Controllers\Api\RentencheckController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FileController;
 use App\Models\User;
@@ -26,7 +26,7 @@ Route::prefix('auth')->group(function () {
     // Public routes
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-    
+
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', [AuthController::class, 'user']);
@@ -38,7 +38,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADMIN])->prefix('admin')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard']);
-    
+
     // Advisor management
     Route::prefix('advisors')->group(function () {
         Route::get('/', [AdminController::class, 'getAdvisors']);
@@ -47,7 +47,7 @@ Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADMIN])->prefix('admin')
         Route::patch('/{advisorId}/status', [AdminController::class, 'updateAdvisorStatus']);
         Route::delete('/{advisorId}', [AdminController::class, 'deleteAdvisor']);
     });
-    
+
     // Pension Settings management
     Route::prefix('pension-settings')->group(function () {
         Route::get('/', [PensionSettingsController::class, 'index']);
@@ -61,10 +61,10 @@ Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADMIN])->prefix('admin')
 Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADVISOR . ',' . User::ROLE_ADMIN])->group(function () {
     // File download route
     Route::get('/files/{fileId}/download', [FileController::class, 'download'])->name('file.download');
-    
+
     // Client management routes
     Route::apiResource('clients', ClientController::class);
-    
+
     // Rentencheck routes (nested under clients)
     Route::prefix('clients/{clientId}/rentenchecks')->group(function () {
         Route::get('/', [RentencheckController::class, 'index']);
@@ -88,7 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'permissions' => $request->user()->getAllPermissions()->pluck('name'),
         ]);
     });
-    
+
     // Pension parameters (read-only for calculations)
     Route::get('/pension-parameters', [PensionSettingsController::class, 'getParameters']);
-}); 
+});

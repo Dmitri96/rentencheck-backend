@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class PensionSettingsSeeder extends Seeder
 {
@@ -14,7 +14,7 @@ class PensionSettingsSeeder extends Seeder
     public function run(): void
     {
         $currentDate = Carbon::now();
-        
+
         $settings = [
             // Social Insurance Rates (most important for pension calculations)
             [
@@ -49,7 +49,7 @@ class PensionSettingsSeeder extends Seeder
                 'description' => 'Health insurance exemption amount for occupational pension',
                 'description_de' => 'Freibetrag KV in der BAV',
             ],
-            
+
             // Economic Assumptions (critical for calculations)
             [
                 'key' => 'inflation_rate',
@@ -75,7 +75,7 @@ class PensionSettingsSeeder extends Seeder
                 'description' => 'Assumed annual investment return rate',
                 'description_de' => 'Angenommene jährliche Kapitalrendite',
             ],
-            
+
             // Tax Rates (important for net calculations)
             [
                 'key' => 'tax_rate_stufe_1',
@@ -117,7 +117,7 @@ class PensionSettingsSeeder extends Seeder
                 'description' => 'Tax rate for bracket 5 (top rate)',
                 'description_de' => 'Steuersatz Stufe 5 (Spitzensteuersatz)',
             ],
-            
+
             // Tax Thresholds (essential for bracket calculations)
             [
                 'key' => 'tax_threshold_1',
@@ -151,7 +151,7 @@ class PensionSettingsSeeder extends Seeder
                 'description' => 'Tax bracket 4 threshold',
                 'description_de' => 'Grenze Stufe 4',
             ],
-            
+
             // Regional Tax Rates (useful for different states)
             [
                 'key' => 'church_tax_bavaria_bw',
@@ -204,7 +204,7 @@ class PensionSettingsSeeder extends Seeder
                 'description_de' => 'Standard-Lebenserwartung für Analysen',
             ],
         ];
-        
+
         foreach ($settings as $setting) {
             DB::table('pension_settings')->insert([
                 'key' => $setting['key'],
@@ -221,4 +221,4 @@ class PensionSettingsSeeder extends Seeder
             ]);
         }
     }
-} 
+}

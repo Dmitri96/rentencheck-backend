@@ -36,4 +36,4 @@ final class UpdateAdvisorStatusRequest extends FormRequest
             'status.in' => 'Ungültiger Status.',
         ];
     }
-} 
+}

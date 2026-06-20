@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Client;
-use App\Models\Rentencheck;
 use App\Http\Requests\CreateAdvisorRequest;
 use App\Http\Requests\GetAdvisorsRequest;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
+use App\Models\Client;
+use App\Models\Rentencheck;
+use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 final class AdminService
 {
@@ -50,8 +49,8 @@ final class AdminService
             'total_clients' => $totalClients,
             'total_rentenchecks' => $totalRentenchecks,
             'completed_rentenchecks' => $completedRentenchecks,
-            'completion_rate' => $totalRentenchecks > 0 
-                ? round(($completedRentenchecks / $totalRentenchecks) * 100, 1) 
+            'completion_rate' => $totalRentenchecks > 0
+                ? round(($completedRentenchecks / $totalRentenchecks) * 100, 1)
                 : 0,
             'recent_activity' => $recentRentenchecks,
         ];
@@ -74,7 +73,7 @@ final class AdminService
 
         // Apply filters
         $this->applyFilters($query, $request);
-        
+
         // Apply sorting
         $this->applySorting($query, $request);
 
@@ -88,7 +87,7 @@ final class AdminService
     {
         return DB::transaction(function () use ($request) {
             $validated = $request->validated();
-            
+
             $advisor = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -117,7 +116,7 @@ final class AdminService
     {
         $advisor = User::advisors()->findOrFail($advisorId);
         $advisor->update(['status' => $status]);
-        
+
         return $advisor;
     }
 
@@ -127,7 +126,7 @@ final class AdminService
     public function deleteAdvisor(int $advisorId): void
     {
         $advisor = User::advisors()->findOrFail($advisorId);
-        
+
         // Check if advisor has clients
         if ($advisor->clients()->count() > 0) {
             throw new \InvalidArgumentException('Berater kann nicht gelöscht werden, da er noch Kunden hat.');
@@ -169,8 +168,8 @@ final class AdminService
                 'total_rentenchecks' => $totalRentenchecks->count(),
                 'completed_rentenchecks' => $completedRentenchecks->count(),
                 'pending_rentenchecks' => $totalRentenchecks->where('status', '!=', 'completed')->count(),
-                'completion_rate' => $totalRentenchecks->count() > 0 
-                    ? round(($completedRentenchecks->count() / $totalRentenchecks->count()) * 100, 1) 
+                'completion_rate' => $totalRentenchecks->count() > 0
+                    ? round(($completedRentenchecks->count() / $totalRentenchecks->count()) * 100, 1)
                     : 0,
                 'avg_completion_time' => $this->calculateAverageCompletionTime($completedRentenchecks),
             ],
@@ -188,12 +187,12 @@ final class AdminService
             $query->where('status', $request->validated('status'));
         }
 
-        if ($request->has('search') && !empty($request->validated('search'))) {
+        if ($request->has('search') && ! empty($request->validated('search'))) {
             $search = $request->validated('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'ILIKE', "%{$search}%")
-                  ->orWhere('email', 'ILIKE', "%{$search}%")
-                  ->orWhere('company', 'ILIKE', "%{$search}%");
+                    ->orWhere('email', 'ILIKE', "%{$search}%")
+                    ->orWhere('company', 'ILIKE', "%{$search}%");
             });
         }
     }
@@ -214,14 +213,14 @@ final class AdminService
     private function generateMonthlyStats($totalRentenchecks): array
     {
         $monthlyStats = [];
-        
+
         for ($i = 11; $i >= 0; $i--) {
             $month = now()->subMonths($i);
-            
+
             $monthlyRentenchecks = $totalRentenchecks->filter(function ($rentencheck) use ($month) {
                 return $rentencheck->created_at->format('Y-m') === $month->format('Y-m');
             });
-            
+
             $monthlyStats[] = [
                 'month' => $month->format('M Y'),
                 'total' => $monthlyRentenchecks->count(),
@@ -267,4 +266,4 @@ final class AdminService
             ->values()
             ->toArray();
     }
-} 
+}

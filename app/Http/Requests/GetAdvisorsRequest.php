@@ -47,4 +47,4 @@ final class GetAdvisorsRequest extends FormRequest
             'page.min' => 'Seitenzahl muss mindestens 1 sein.',
         ];
     }
-} 
+}

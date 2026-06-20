@@ -11,7 +11,7 @@ use Illuminate\Auth\Access\Response;
 
 /**
  * Authorization policy for pension settings management
- * 
+ *
  * Controls who can view, create, update, and delete pension settings.
  * Only users with 'admin' or 'pension_manager' roles should have access.
  */
@@ -88,4 +88,4 @@ class PensionSettingPolicy
             ? Response::allow()
             : Response::deny('Sie haben keine Berechtigung, mehrere Renteneinstellungen zu bearbeiten.');
     }
-} 
+}

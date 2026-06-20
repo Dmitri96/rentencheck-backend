@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Client;
-use App\Models\Rentencheck;
-use App\Models\RentencheckContract;
 use App\Exceptions\Domain\InvalidStepException;
 use App\Exceptions\Domain\RentencheckNotCompleteException;
+use App\Models\Client;
+use App\Models\Rentencheck;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 final class RentencheckService
 {
     public function __construct(
-        private readonly FileService $fileService
+        private readonly FileService $fileService,
     ) {}
 
     /**
@@ -44,7 +43,7 @@ final class RentencheckService
             Log::error('Failed to create rentencheck', [
                 'client_id' => $client->id,
                 'user_id' => $userId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -68,7 +67,7 @@ final class RentencheckService
             DB::commit();
             Log::info('Rentencheck step updated', [
                 'rentencheck_id' => $rentencheck->id,
-                'step' => $step
+                'step' => $step,
             ]);
 
             return $rentencheck->fresh(['client']);
@@ -77,7 +76,7 @@ final class RentencheckService
             Log::error('Failed to update rentencheck step', [
                 'rentencheck_id' => $rentencheck->id,
                 'step' => $step,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -88,8 +87,8 @@ final class RentencheckService
      */
     public function completeRentencheck(Rentencheck $rentencheck): array
     {
-        if (!$rentencheck->is_complete) {
-            throw new RentencheckNotCompleteException();
+        if (! $rentencheck->is_complete) {
+            throw new RentencheckNotCompleteException;
         }
 
         try {
@@ -112,7 +111,7 @@ final class RentencheckService
             DB::rollBack();
             Log::error('Failed to complete rentencheck', [
                 'rentencheck_id' => $rentencheck->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -130,7 +129,7 @@ final class RentencheckService
         $rentencheck->forceCompleteStep($step);
         Log::info('Rentencheck step marked as completed', [
             'rentencheck_id' => $rentencheck->id,
-            'step' => $step
+            'step' => $step,
         ]);
 
         return $rentencheck->fresh(['client']);
@@ -157,11 +156,9 @@ final class RentencheckService
             DB::rollBack();
             Log::error('Failed to delete rentencheck', [
                 'rentencheck_id' => $rentencheck->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
     }
-
-
-} 
+}

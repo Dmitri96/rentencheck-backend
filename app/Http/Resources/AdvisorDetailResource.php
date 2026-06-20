@@ -31,4 +31,4 @@ final class AdvisorDetailResource extends JsonResource
             'recent_clients' => $this->resource['recent_clients'],
         ];
     }
-} 
+}

@@ -22,20 +22,20 @@ return new class extends Migration
             $table->string('path'); // Full path to file
             $table->string('type'); // File type category: 'pdf', 'image', 'document', etc.
             $table->text('description')->nullable();
-            
+
             // Polymorphic relationship
             $table->string('fileable_type'); // Model class name
             $table->unsignedBigInteger('fileable_id'); // Model ID
             $table->index(['fileable_type', 'fileable_id']);
-            
+
             // Metadata
             $table->json('metadata')->nullable(); // Additional file metadata
             $table->boolean('is_public')->default(false);
             $table->timestamp('uploaded_at');
             $table->unsignedBigInteger('uploaded_by'); // User who uploaded
-            
+
             $table->timestamps();
-            
+
             // Indexes
             $table->index('type');
             $table->index('uploaded_by');

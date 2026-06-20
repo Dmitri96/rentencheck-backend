@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Pension Setting Model
- * 
+ *
  * Manages configurable parameters for German pension calculations
  * including tax rates, social insurance contributions, and economic assumptions.
  */
@@ -75,7 +76,7 @@ class PensionSetting extends Model
     public static function getEconomicAssumptions(): array
     {
         $settings = self::getByCategory('economic_assumptions');
-        
+
         return [
             'inflation_rate' => (float) ($settings->firstWhere('key', 'inflation_rate')?->value ?? 2.0),
             'pension_increase_rate' => (float) ($settings->firstWhere('key', 'pension_increase_rate')?->value ?? 1.0),
@@ -89,7 +90,7 @@ class PensionSetting extends Model
     public static function getSocialInsuranceRates(): array
     {
         $settings = self::getByCategory('social_insurance');
-        
+
         return [
             'health_insurance_rate' => (float) ($settings->firstWhere('key', 'health_insurance_rate')?->value ?? 7.3),
             'additional_health_insurance_rate' => (float) ($settings->firstWhere('key', 'additional_health_insurance_rate')?->value ?? 1.25),
@@ -105,7 +106,7 @@ class PensionSetting extends Model
     {
         $rates = self::getByCategory('tax_brackets');
         $thresholds = self::getByCategory('tax_thresholds');
-        
+
         return [
             'rates' => [
                 'stufe_1' => (float) ($rates->firstWhere('key', 'tax_rate_stufe_1')?->value ?? 0.0),
@@ -129,9 +130,9 @@ class PensionSetting extends Model
     public static function getTotalInsuranceRate(): float
     {
         $rates = self::getSocialInsuranceRates();
-        
-        return ($rates['health_insurance_rate'] + 
-                $rates['additional_health_insurance_rate'] + 
+
+        return ($rates['health_insurance_rate'] +
+                $rates['additional_health_insurance_rate'] +
                 $rates['care_insurance_rate']) / 100;
     }
 
@@ -168,7 +169,7 @@ class PensionSetting extends Model
      * Get active settings grouped by category as Eloquent collections
      * This allows proper API Resource transformation without double formatting
      */
-    public static function getGroupedSettings(): \Illuminate\Support\Collection
+    public static function getGroupedSettings(): Collection
     {
         return self::where('is_active', true)
             ->where('valid_from', '<=', Carbon::now())
@@ -179,4 +180,4 @@ class PensionSetting extends Model
             ->get()
             ->groupBy('category');
     }
-} 
+}

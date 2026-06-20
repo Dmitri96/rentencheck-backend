@@ -46,4 +46,4 @@ return [
         'solidarity_surcharge_rate' => 5.50,
         'solidarity_surcharge_threshold' => 19450.00,
     ],
-]; 
+];

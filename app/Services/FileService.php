@@ -6,12 +6,11 @@ namespace App\Services;
 
 use App\Models\File;
 use App\Models\Rentencheck;
-use App\Models\Client;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 final class FileService
 {
@@ -37,7 +36,7 @@ final class FileService
         try {
             $pdfContent = $this->generatePdfContent($rentencheck);
             $filename = $this->generatePdfFilename($rentencheck);
-            
+
             $file = File::createFromContent(
                 content: $pdfContent,
                 originalName: $filename,
@@ -46,20 +45,20 @@ final class FileService
                 userId: $rentencheck->user_id,
                 type: 'pdf',
                 description: 'Rentencheck PDF',
-                isPublic: false
+                isPublic: false,
             );
 
             Log::info('Rentencheck PDF generated', [
                 'rentencheck_id' => $rentencheck->id,
                 'file_id' => $file->id,
-                'filename' => $filename
+                'filename' => $filename,
             ]);
 
             return $file;
         } catch (\Exception $e) {
             Log::error('Failed to generate rentencheck PDF', [
                 'rentencheck_id' => $rentencheck->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -72,7 +71,7 @@ final class FileService
     {
         // Check if a stored PDF already exists
         $existingPdf = $rentencheck->getMainPdfFile();
-        
+
         if ($existingPdf && $existingPdf->exists()) {
             return [
                 'content' => $existingPdf->getContents(),
@@ -96,7 +95,7 @@ final class FileService
         int $userId,
         string $type = 'document',
         ?string $description = null,
-        bool $isPublic = false
+        bool $isPublic = false,
     ): File {
         return File::createFromUpload(
             $uploadedFile,
@@ -104,7 +103,7 @@ final class FileService
             $userId,
             $type,
             $description,
-            $isPublic
+            $isPublic,
         );
     }
 
@@ -119,7 +118,7 @@ final class FileService
         } catch (\Exception $e) {
             Log::error('Failed to delete file', [
                 'file_id' => $file->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -144,23 +143,23 @@ final class FileService
      */
     private function generatePdfContent(Rentencheck $rentencheck): string
     {
-        $options = new Options();
+        $options = new Options;
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isRemoteEnabled', true);
         $options->set('isHtml5ParserEnabled', true);
 
         $dompdf = new Dompdf($options);
-        
+
         $html = view('pdf.rentencheck', [
             'rentencheck' => $rentencheck,
             'client' => $rentencheck->client,
             'aspectLabels' => self::ASPECT_LABELS,
         ])->render();
-        
+
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        
+
         return $dompdf->output();
     }
 
@@ -170,6 +169,7 @@ final class FileService
     private function generatePdfFilename(Rentencheck $rentencheck): string
     {
         $clientName = str_replace(' ', '_', $rentencheck->client->full_name);
+
         return "Rentencheck_{$clientName}_{$rentencheck->id}.pdf";
     }
-} 
+}

@@ -13,9 +13,8 @@ use Illuminate\Http\Request;
 final class AuthController extends Controller
 {
     public function __construct(
-        private readonly AuthService $authService
-    ) {
-    }
+        private readonly AuthService $authService,
+    ) {}
 
     /**
      * Register a new user.
@@ -56,4 +55,4 @@ final class AuthController extends Controller
 
         return response()->json($result);
     }
-} 
+}

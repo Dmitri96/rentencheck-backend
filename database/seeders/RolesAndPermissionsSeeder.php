@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -17,7 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Create permissions - use firstOrCreate to avoid duplicates
         $permissions = [
@@ -26,7 +27,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'create clients',
             'edit clients',
             'delete clients',
-            
+
             // Rentencheck permissions
             'view rentenchecks',
             'create rentenchecks',
@@ -34,7 +35,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'delete rentenchecks',
             'complete rentenchecks',
             'download pdf',
-            
+
             // User management permissions (admin only)
             'view users',
             'create users',
@@ -43,7 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'block users',
             'unblock users',
             'assign roles',
-            
+
             // Admin dashboard permissions
             'view admin dashboard',
             'view advisor statistics',
@@ -55,10 +56,10 @@ class RolesAndPermissionsSeeder extends Seeder
         }
 
         // Create roles and assign permissions - use firstOrCreate to avoid duplicates
-        
+
         // Financial Advisor Role
         $advisorRole = Role::firstOrCreate(['name' => User::ROLE_ADVISOR, 'guard_name' => 'web']);
-        
+
         // Sync permissions for advisor role (this will update if permissions change)
         $advisorRole->syncPermissions([
             'view clients',
@@ -75,7 +76,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Admin Role - has all permissions
         $adminRole = Role::firstOrCreate(['name' => User::ROLE_ADMIN, 'guard_name' => 'web']);
-        
+
         // Sync all permissions for admin role
         $adminRole->syncPermissions(Permission::all());
 
@@ -94,11 +95,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 'accept_terms' => true,
                 'accept_privacy' => true,
                 'email_verified_at' => now(),
-            ]
+            ],
         );
 
         // Ensure admin has the correct role
-        if (!$adminUser->hasRole(User::ROLE_ADMIN)) {
+        if (! $adminUser->hasRole(User::ROLE_ADMIN)) {
             $adminUser->assignRole(User::ROLE_ADMIN);
         }
 
@@ -118,11 +119,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 'accept_terms' => true,
                 'accept_privacy' => true,
                 'email_verified_at' => now(),
-            ]
+            ],
         );
 
         // Ensure advisor has the correct role
-        if (!$advisorUser->hasRole(User::ROLE_ADVISOR)) {
+        if (! $advisorUser->hasRole(User::ROLE_ADVISOR)) {
             $advisorUser->assignRole(User::ROLE_ADVISOR);
         }
 
@@ -130,4 +131,4 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->command->info('Admin user: admin@rentenblick.de (password: admin123!)');
         $this->command->info('Advisor user: berater@rentenblick.de (password: berater123!)');
     }
-} 
+}

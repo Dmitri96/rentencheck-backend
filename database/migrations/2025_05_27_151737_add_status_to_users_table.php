@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('status', ['active', 'blocked', 'pending'])
-                  ->default('active')
-                  ->after('password');
+                ->default('active')
+                ->after('password');
         });
     }
 
@@ -27,4 +27,4 @@ return new class extends Migration
             $table->dropColumn('status');
         });
     }
-}; 
+};

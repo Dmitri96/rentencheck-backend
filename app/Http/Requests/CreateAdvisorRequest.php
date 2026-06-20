@@ -47,4 +47,4 @@ final class CreateAdvisorRequest extends FormRequest
             'password.confirmed' => 'Die Passwort-Bestätigung stimmt nicht überein.',
         ];
     }
-} 
+}

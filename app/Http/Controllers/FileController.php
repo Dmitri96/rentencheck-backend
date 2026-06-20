@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 final class FileController extends Controller
 {
     public function __construct(
-        private readonly FileService $fileService
+        private readonly FileService $fileService,
     ) {}
 
     /**
@@ -24,15 +24,15 @@ final class FileController extends Controller
             $user = Auth::user();
             $file = File::findOrFail($fileId);
 
-            if (!$this->fileService->userCanAccessFile($user->id, $file)) {
+            if (! $this->fileService->userCanAccessFile($user->id, $file)) {
                 return response()->json([
-                    'message' => 'Zugriff verweigert'
+                    'message' => 'Zugriff verweigert',
                 ], 403);
             }
 
-            if (!$file->exists()) {
+            if (! $file->exists()) {
                 return response()->json([
-                    'message' => 'Datei nicht gefunden'
+                    'message' => 'Datei nicht gefunden',
                 ], 404);
             }
 
@@ -47,7 +47,7 @@ final class FileController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Fehler beim Herunterladen der Datei'
+                'message' => 'Fehler beim Herunterladen der Datei',
             ], 500);
         }
     }

@@ -15,19 +15,19 @@ return new class extends Migration
             // Split name into first_name and last_name
             $table->string('first_name')->nullable()->after('name');
             $table->string('last_name')->nullable()->after('first_name');
-            
+
             // Additional user information
             $table->string('phone')->nullable()->after('email');
             $table->string('company')->nullable()->after('phone');
             $table->string('plan')->default('free')->after('company');
-            
+
             // Newsletter subscription
             $table->boolean('newsletter')->default(false)->after('plan');
-            
+
             // Terms and privacy acceptance
             $table->boolean('accept_terms')->default(false)->after('newsletter');
             $table->boolean('accept_privacy')->default(false)->after('accept_terms');
-            
+
             // Make name nullable since we'll use first_name and last_name
             $table->string('name')->nullable()->change();
         });
@@ -41,15 +41,15 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
                 'first_name',
-                'last_name', 
+                'last_name',
                 'phone',
                 'company',
                 'plan',
                 'newsletter',
                 'accept_terms',
-                'accept_privacy'
+                'accept_privacy',
             ]);
-            
+
             // Make name required again
             $table->string('name')->nullable(false)->change();
         });

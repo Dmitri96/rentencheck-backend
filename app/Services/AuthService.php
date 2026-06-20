@@ -8,8 +8,8 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\NewAccessToken;
 
 final class AuthService
@@ -17,7 +17,7 @@ final class AuthService
     /**
      * Register a new user and return a token.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array{user: UserResource, token: string, message: string}
      */
     public function register(array $data): array
@@ -27,7 +27,7 @@ final class AuthService
 
             // Create the full name from first_name and last_name
             $fullName = trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
-            
+
             $user = User::create([
                 'name' => $fullName ?: null,
                 'first_name' => $data['first_name'],
@@ -53,7 +53,7 @@ final class AuthService
             return [
                 'user' => new UserResource($user->load('roles')),
                 'token' => $token->plainTextToken,
-                'message' => 'Registrierung erfolgreich'
+                'message' => 'Registrierung erfolgreich',
             ];
         } catch (\Exception $e) {
             DB::rollBack();
@@ -64,21 +64,22 @@ final class AuthService
     /**
      * Attempt to authenticate a user and return a token.
      *
-     * @param array{email: string, password: string, remember_me?: bool} $credentials
+     * @param  array{email: string, password: string, remember_me?: bool}  $credentials
      * @return array{user: UserResource, token: string, message: string}
+     *
      * @throws AuthenticationException
      */
     public function login(array $credentials): array
     {
         $remember = $credentials['remember_me'] ?? false;
-        
+
         // Remove remember_me from credentials for Auth::attempt
         $loginCredentials = [
             'email' => $credentials['email'],
             'password' => $credentials['password'],
         ];
-        
-        if (!Auth::attempt($loginCredentials, $remember)) {
+
+        if (! Auth::attempt($loginCredentials, $remember)) {
             throw new AuthenticationException('Ungültige Anmeldedaten.');
         }
 
@@ -91,7 +92,7 @@ final class AuthService
         }
 
         // Check if user is active
-        if (!$user->isActive()) {
+        if (! $user->isActive()) {
             Auth::logout();
             throw new AuthenticationException('Ihr Account ist nicht aktiv.');
         }
@@ -101,14 +102,13 @@ final class AuthService
         return [
             'user' => new UserResource($user->load('roles')),
             'token' => $token->plainTextToken,
-            'message' => 'Anmeldung erfolgreich'
+            'message' => 'Anmeldung erfolgreich',
         ];
     }
 
     /**
      * Revoke the user's current access token.
      *
-     * @param User $user
      * @return array{message: string}
      */
     public function logout(User $user): array
@@ -116,14 +116,13 @@ final class AuthService
         $user->currentAccessToken()->delete();
 
         return [
-            'message' => 'Erfolgreich abgemeldet'
+            'message' => 'Erfolgreich abgemeldet',
         ];
     }
 
     /**
      * Get the authenticated user information.
      *
-     * @param User $user
      * @return array{user: UserResource, message: string}
      */
     public function getUser(User $user): array
@@ -131,18 +130,15 @@ final class AuthService
         return [
             'user' => new UserResource($user->load('roles')),
             'permissions' => $user->getAllPermissions()->pluck('name'),
-            'message' => 'Benutzerinformationen erfolgreich abgerufen'
+            'message' => 'Benutzerinformationen erfolgreich abgerufen',
         ];
     }
 
     /**
      * Create a new access token for the user.
-     *
-     * @param User $user
-     * @return NewAccessToken
      */
     private function createToken(User $user): NewAccessToken
     {
         return $user->createToken('auth_token');
     }
-} 
+}

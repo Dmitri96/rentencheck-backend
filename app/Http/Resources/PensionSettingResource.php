@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * PensionSetting API Resource
- * 
+ *
  * Transforms pension setting model data for API responses
  */
 class PensionSettingResource extends JsonResource
@@ -41,4 +41,4 @@ class PensionSettingResource extends JsonResource
     {
         return $this->value . ($this->unit === '%' ? '%' : ' ' . $this->unit);
     }
-} 
+}

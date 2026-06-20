@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ final class StoreClientRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -55,29 +56,29 @@ final class StoreClientRequest extends FormRequest
             'first_name.required' => 'Der Vorname ist erforderlich.',
             'first_name.min' => 'Der Vorname muss mindestens 2 Zeichen lang sein.',
             'first_name.max' => 'Der Vorname darf maximal 50 Zeichen lang sein.',
-            
+
             'last_name.required' => 'Der Nachname ist erforderlich.',
             'last_name.min' => 'Der Nachname muss mindestens 2 Zeichen lang sein.',
             'last_name.max' => 'Der Nachname darf maximal 50 Zeichen lang sein.',
-            
+
             'email.required' => 'Die E-Mail-Adresse ist erforderlich.',
             'email.email' => 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
             'email.unique' => 'Diese E-Mail-Adresse ist bereits für einen anderen Mandanten registriert.',
             'email.max' => 'Die E-Mail-Adresse darf maximal 255 Zeichen lang sein.',
-            
+
             'phone.regex' => 'Bitte geben Sie eine gültige Telefonnummer ein.',
             'phone.max' => 'Die Telefonnummer darf maximal 20 Zeichen lang sein.',
-            
+
             'street.max' => 'Die Straße darf maximal 255 Zeichen lang sein.',
             'city.max' => 'Die Stadt darf maximal 100 Zeichen lang sein.',
-            
+
             'postal_code.regex' => 'Bitte geben Sie eine gültige 5-stellige PLZ ein.',
             'postal_code.max' => 'Die PLZ darf maximal 5 Zeichen lang sein.',
-            
+
             'birth_date.date' => 'Bitte geben Sie ein gültiges Geburtsdatum ein.',
             'birth_date.before' => 'Das Geburtsdatum muss in der Vergangenheit liegen.',
             'birth_date.after' => 'Das Geburtsdatum muss nach dem 01.01.1900 liegen.',
-            
+
             'notes.max' => 'Die Notizen dürfen maximal 1000 Zeichen lang sein.',
         ];
     }

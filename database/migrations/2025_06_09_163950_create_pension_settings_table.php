@@ -23,7 +23,7 @@ return new class extends Migration
             $table->date('valid_from');
             $table->date('valid_until')->nullable();
             $table->timestamps();
-            
+
             $table->index(['category', 'is_active']);
             $table->index(['valid_from', 'valid_until']);
         });

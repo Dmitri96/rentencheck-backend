@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * RentencheckContract Model
- * 
+ *
  * Handles comprehensive contract data for pension analysis including:
  * - Payout contracts with maturity details
  * - Pension contracts with monthly amounts
  * - Additional income with frequency settings
- * 
+ *
  * This model follows clean architecture principles with proper
  * data casting and business logic separation.
  */
@@ -25,7 +26,7 @@ final class RentencheckContract extends Model
 
     /**
      * The attributes that are mass assignable.
-     * 
+     *
      * Updated to include comprehensive contract fields matching
      * the frontend form structure for complete data integrity.
      */
@@ -49,7 +50,7 @@ final class RentencheckContract extends Model
 
     /**
      * The attributes that should be cast.
-     * 
+     *
      * Ensures proper data types for financial calculations
      * and maintains precision for monetary values.
      */
@@ -70,7 +71,9 @@ final class RentencheckContract extends Model
      * Contract category constants for type safety
      */
     public const CATEGORY_PAYOUT = 'payout';
+
     public const CATEGORY_PENSION = 'pension';
+
     public const CATEGORY_ADDITIONAL_INCOME = 'additional_income';
 
     /**
@@ -105,10 +108,9 @@ final class RentencheckContract extends Model
 
     /**
      * Scope for specific category
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $category
-     * @return \Illuminate\Database\Eloquent\Builder
+     *
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeCategory($query, string $category)
     {
@@ -117,9 +119,9 @@ final class RentencheckContract extends Model
 
     /**
      * Scope for ordering contracts by sort order and ID
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     *
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeOrdered($query)
     {
@@ -128,9 +130,9 @@ final class RentencheckContract extends Model
 
     /**
      * Scope for payout contracts only
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     *
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopePayoutContracts($query)
     {
@@ -139,9 +141,9 @@ final class RentencheckContract extends Model
 
     /**
      * Scope for pension contracts only
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     *
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopePensionContracts($query)
     {
@@ -150,9 +152,9 @@ final class RentencheckContract extends Model
 
     /**
      * Scope for additional income contracts only
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     *
+     * @param  Builder  $query
+     * @return Builder
      */
     public function scopeAdditionalIncomeContracts($query)
     {
@@ -185,13 +187,13 @@ final class RentencheckContract extends Model
 
     /**
      * Get the annual amount for additional income based on frequency
-     * 
+     *
      * Business logic to calculate yearly income from different frequencies
      * for consistent pension gap analysis calculations.
      */
     public function getAnnualAmountAttribute(): float
     {
-        if (!$this->isAdditionalIncome()) {
+        if (! $this->isAdditionalIncome()) {
             return 0.0;
         }
 
@@ -205,7 +207,7 @@ final class RentencheckContract extends Model
 
     /**
      * Get formatted contract display name
-     * 
+     *
      * Creates a user-friendly display name combining contract and company
      * for better UX in frontend components.
      */
@@ -220,14 +222,14 @@ final class RentencheckContract extends Model
 
     /**
      * Get formatted amount based on contract type
-     * 
+     *
      * Returns the most relevant amount for display purposes
      * prioritizing projected over guaranteed amounts.
      */
     public function getFormattedAmountAttribute(): string
     {
         $amount = $this->projected_amount ?? $this->guaranteed_amount ?? 0;
-        
+
         if ($this->isPensionContract() && $this->monthly_amount) {
             return number_format((float) $this->monthly_amount, 2, ',', '.') . ' €/Monat';
         }
@@ -237,7 +239,7 @@ final class RentencheckContract extends Model
 
     /**
      * Validate contract data based on category
-     * 
+     *
      * Business rule validation to ensure data integrity
      * across different contract types.
      */
@@ -257,25 +259,25 @@ final class RentencheckContract extends Model
         // Category-specific validations
         switch ($this->category) {
             case self::CATEGORY_PAYOUT:
-                if (!$this->maturity_year) {
+                if (! $this->maturity_year) {
                     $errors[] = 'Ablaufjahr ist für Auszahlungsverträge erforderlich';
                 }
                 break;
 
             case self::CATEGORY_PENSION:
-                if (!$this->pension_start_year) {
+                if (! $this->pension_start_year) {
                     $errors[] = 'Rentenbeginn-Jahr ist für Rentenverträge erforderlich';
                 }
-                if (!$this->monthly_amount) {
+                if (! $this->monthly_amount) {
                     $errors[] = 'Monatlicher Betrag ist für Rentenverträge erforderlich';
                 }
                 break;
 
             case self::CATEGORY_ADDITIONAL_INCOME:
-                if (!$this->start_year) {
+                if (! $this->start_year) {
                     $errors[] = 'Startjahr ist für zusätzliches Einkommen erforderlich';
                 }
-                if (!in_array($this->frequency, self::FREQUENCIES)) {
+                if (! in_array($this->frequency, self::FREQUENCIES)) {
                     $errors[] = 'Ungültige Häufigkeit für zusätzliches Einkommen';
                 }
                 break;
@@ -286,13 +288,13 @@ final class RentencheckContract extends Model
 
     /**
      * Create contract from frontend data
-     * 
+     *
      * Factory method to create contracts from validated frontend data
      * with proper data transformation and business logic application.
      */
     public static function createFromData(int $rentencheckId, string $category, array $data, int $sortOrder = 0): self
     {
-        $contract = new self();
+        $contract = new self;
         $contract->rentencheck_id = $rentencheckId;
         $contract->category = $category;
         $contract->sort_order = $sortOrder;

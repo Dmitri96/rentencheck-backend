@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Rentencheck;
 use App\Models\PensionSetting;
+use App\Models\Rentencheck;
 
 /**
  * Professional German Pension Calculation Service
- * 
+ *
  * Handles pension calculations using configurable parameters from the database.
  * Implements German pension advisory standards with dynamic tax and insurance rates.
  */
 class PensionCalculationService
 {
     private array $economicAssumptions;
+
     private array $socialInsuranceRates;
+
     private array $taxBrackets;
 
     public function __construct()
@@ -33,6 +35,7 @@ class PensionCalculationService
     public function calculateStatutoryPensionAfterInsurance(float $grossPension): float
     {
         $totalInsuranceRate = PensionSetting::getTotalInsuranceRate();
+
         return $grossPension * (1 - $totalInsuranceRate);
     }
 
@@ -42,6 +45,7 @@ class PensionCalculationService
     public function calculatePurchasingPowerAtRetirement(float $pensionAmount, int $yearsToRetirement): float
     {
         $inflationRate = $this->economicAssumptions['inflation_rate'] / 100;
+
         return $pensionAmount / pow(1 + $inflationRate, $yearsToRetirement);
     }
 
@@ -51,6 +55,7 @@ class PensionCalculationService
     public function calculateInflatedGap(float $currentGap, int $yearsFromToday): float
     {
         $inflationRate = $this->economicAssumptions['inflation_rate'] / 100;
+
         return $currentGap * pow(1 + $inflationRate, $yearsFromToday);
     }
 
@@ -61,6 +66,7 @@ class PensionCalculationService
     {
         $interestRate = $this->economicAssumptions['investment_return_rate'] / 100;
         $totalPayments = $annualGap * $yearsInRetirement;
+
         return $totalPayments / pow(1 + $interestRate, $yearsInRetirement);
     }
 
@@ -71,34 +77,34 @@ class PensionCalculationService
     {
         $rates = $this->taxBrackets['rates'];
         $thresholds = $this->taxBrackets['thresholds'];
-        
+
         if ($annualIncome <= $thresholds['threshold_1']) {
             return 0; // Tax-free allowance
         }
-        
+
         $tax = 0;
-        
+
         // Progressive tax calculation
         if ($annualIncome > $thresholds['threshold_1']) {
             $taxableAmount = min($annualIncome, $thresholds['threshold_2']) - $thresholds['threshold_1'];
             $tax += $taxableAmount * ($rates['stufe_2'] / 100);
         }
-        
+
         if ($annualIncome > $thresholds['threshold_2']) {
             $taxableAmount = min($annualIncome, $thresholds['threshold_3']) - $thresholds['threshold_2'];
             $tax += $taxableAmount * ($rates['stufe_3'] / 100);
         }
-        
+
         if ($annualIncome > $thresholds['threshold_3']) {
             $taxableAmount = min($annualIncome, $thresholds['threshold_4']) - $thresholds['threshold_3'];
             $tax += $taxableAmount * ($rates['stufe_4'] / 100);
         }
-        
+
         if ($annualIncome > $thresholds['threshold_4']) {
             $taxableAmount = $annualIncome - $thresholds['threshold_4'];
             $tax += $taxableAmount * ($rates['stufe_5'] / 100);
         }
-        
+
         return $tax;
     }
 
@@ -109,11 +115,11 @@ class PensionCalculationService
     {
         $solidarityThreshold = PensionSetting::getValue('solidarity_surcharge_threshold') ?? 19450.0;
         $solidarityRate = PensionSetting::getValue('solidarity_surcharge_rate') ?? 5.5;
-        
+
         if ($incomeTax >= $solidarityThreshold) {
             return $incomeTax * ($solidarityRate / 100);
         }
-        
+
         return 0;
     }
 
@@ -163,30 +169,30 @@ class PensionCalculationService
         $lifeExpectancy = $pensionData['life_expectancy'] ?? (int) (PensionSetting::getValue('life_expectancy') ?? 85);
         $desiredPension = $pensionData['desired_pension'] ?? 1600;
         $statutoryPensionGross = $pensionData['statutory_pension_gross'] ?? 719;
-        
+
         $yearsToRetirement = $retirementAge - $currentAge;
         $yearsInRetirement = $lifeExpectancy - $retirementAge;
-        
+
         // Calculate statutory pension after insurance
         $statutoryPensionAfterInsurance = $this->calculateStatutoryPensionAfterInsurance($statutoryPensionGross);
-        
+
         // Calculate purchasing power at retirement
         $statutoryPensionPurchasingPower = $this->calculatePurchasingPowerAtRetirement(
-            $statutoryPensionAfterInsurance, 
-            $yearsToRetirement
+            $statutoryPensionAfterInsurance,
+            $yearsToRetirement,
         );
-        
+
         // Calculate current pension gap
         $currentPensionGap = max(0, $desiredPension - $statutoryPensionPurchasingPower);
-        
+
         // Calculate inflated gaps
         $gapAtRetirement = $this->calculateInflatedGap($currentPensionGap, $yearsToRetirement);
         $gapAtLifeExpectancy = $this->calculateInflatedGap($currentPensionGap, $lifeExpectancy - $currentAge);
-        
+
         // Calculate capital requirements
         $annualGapAtRetirement = $gapAtRetirement * 12;
         $requiredCapitalAtRetirement = $this->calculateRequiredCapital($annualGapAtRetirement, $yearsInRetirement);
-        
+
         return [
             'statutory_pension' => [
                 'gross' => $statutoryPensionGross,
@@ -209,7 +215,7 @@ class PensionCalculationService
 
     /**
      * Transform rentencheck data into pension chart format
-     * 
+     *
      * This service handles the complex calculations needed to convert
      * our multi-step rentencheck data into the simplified structure
      * required by the pension visualization chart component.
@@ -219,96 +225,96 @@ class PensionCalculationService
     {
         $step2Data = $rentencheck->step_2_data ?? [];
         $step3Data = $rentencheck->step_3_data ?? [];
-        
+
         // Basic demographics from step 2
         $currentAge = (int) ($step2Data['currentAge'] ?? 30);
         $retirementAge = (int) ($step2Data['retirementAge'] ?? 67);
-        
+
         // USE DYNAMIC INFLATION RATE FROM ADMIN PANEL SETTINGS
         $inflationRate = $this->economicAssumptions['inflation_rate'];
-        
+
         // Use realistic German life expectancy (around 83-85 years)
         // Don't use provisionDuration as it can be unrealistic for chart display
         $lifeExpectancy = 85;
-        
+
         // Desired pension values
         $desiredPensionToday = (float) ($step2Data['pensionWishCurrentValue'] ?? 0);
         $desiredPensionRetirement = $this->calculateInflationAdjusted(
             $desiredPensionToday,
             $inflationRate,
-            $retirementAge - $currentAge
+            $retirementAge - $currentAge,
         );
         $desiredPensionLifeExpectancy = $this->calculateInflationAdjusted(
             $desiredPensionToday,
             $inflationRate,
-            $lifeExpectancy - $currentAge
+            $lifeExpectancy - $currentAge,
         );
-        
+
         // Current pension values from contracts
         $legalPensionToday = $this->calculateCurrentLegalPension($step3Data);
         $privatePensionToday = $this->calculateCurrentPrivatePension($step3Data);
         $bavRiesterToday = $this->calculateCurrentBavRiester($step3Data);
-        
+
         // Future pension values (inflation-adjusted using DYNAMIC PARAMETERS)
         $yearsToRetirement = $retirementAge - $currentAge;
         $legalPensionRetirement = $this->calculateInflationAdjusted(
             $legalPensionToday,
             $inflationRate,
-            $yearsToRetirement
+            $yearsToRetirement,
         );
         $privatePensionRetirement = $this->calculateInflationAdjusted(
             $privatePensionToday,
             $inflationRate,
-            $yearsToRetirement
+            $yearsToRetirement,
         );
         $bavRiesterRetirement = $this->calculateInflationAdjusted(
             $bavRiesterToday,
             $inflationRate,
-            $yearsToRetirement
+            $yearsToRetirement,
         );
-        
+
         // Calculate statutory pension with DYNAMIC INSURANCE RATES
         $statutoryPensionGross = (float) ($step3Data['statutoryPensionAmount'] ?? 0);
         $statutoryPensionAfterInsurance = $this->calculateStatutoryPensionAfterInsurance($statutoryPensionGross);
-        
+
         // Calculate purchasing power using DYNAMIC PARAMETERS
         $statutoryPensionPurchasingPower = $this->calculatePurchasingPowerAtRetirement(
-            $statutoryPensionAfterInsurance, 
-            $yearsToRetirement
+            $statutoryPensionAfterInsurance,
+            $yearsToRetirement,
         );
-        
+
         return [
             // General Settings (using dynamic parameters)
             'currentAge' => $currentAge,
             'inflationRate' => $inflationRate,
             'retirementAge' => $retirementAge,
             'lifeExpectancy' => $lifeExpectancy,
-            
+
             // Desired Pension
             'desiredPensionToday' => $desiredPensionToday,
             'desiredPensionRetirement' => $desiredPensionRetirement,
             'desiredPensionLifeExpectancy' => $desiredPensionLifeExpectancy,
-            
+
             // Legal Pension (using dynamic calculations)
             'legalPensionToday' => $legalPensionToday,
             'legalPensionRetirement' => $legalPensionRetirement,
             'statutoryPensionGross' => $statutoryPensionGross,
             'statutoryPensionAfterInsurance' => $statutoryPensionAfterInsurance,
             'statutoryPensionPurchasingPower' => $statutoryPensionPurchasingPower,
-            
+
             // Private Pension
             'privatePensionToday' => $privatePensionToday,
             'privatePensionRetirement' => $privatePensionRetirement,
-            
+
             // BAV/Riester
             'bavRiesterToday' => $bavRiesterToday,
             'bavRiesterRetirement' => $bavRiesterRetirement,
-            
+
             // Include current parameters used for transparency
             'parameters_used' => $this->getPensionParameters(),
         ];
     }
-    
+
     /**
      * Calculate inflation-adjusted value
      * Uses dynamic inflation rate from admin panel settings
@@ -318,27 +324,27 @@ class PensionCalculationService
         if ($years <= 0) {
             return $currentValue;
         }
-        
+
         // Convert percentage rate to decimal (admin panel stores as percentage like 2.0 for 2%)
         $decimalRate = $inflationRate / 100;
-        
+
         return $currentValue * pow(1 + $decimalRate, $years);
     }
-    
+
     /**
      * Extract and calculate current legal pension from contracts
      */
     private function calculateCurrentLegalPension(array $step3Data): float
     {
         // If statutory pension claims exist, calculate based on contracts
-        if (!($step3Data['statutoryPensionClaims'] ?? false)) {
+        if (! ($step3Data['statutoryPensionClaims'] ?? false)) {
             return 0.0;
         }
-        
+
         // Look for pension contracts related to legal pension
         $pensionContracts = $step3Data['pensionContracts'] ?? [];
         $total = 0.0;
-        
+
         foreach ($pensionContracts as $contract) {
             $type = strtolower($contract['type'] ?? '');
             // Identify legal pension related contracts
@@ -346,10 +352,10 @@ class PensionCalculationService
                 $total += (float) ($contract['amount'] ?? 0);
             }
         }
-        
+
         return $total;
     }
-    
+
     /**
      * Extract and calculate current private pension from contracts
      */
@@ -357,43 +363,43 @@ class PensionCalculationService
     {
         $pensionContracts = $step3Data['pensionContracts'] ?? [];
         $total = 0.0;
-        
+
         foreach ($pensionContracts as $contract) {
             $type = strtolower($contract['type'] ?? '');
             // Identify private pension contracts (exclude legal and BAV/Riester)
-            if (!str_contains($type, 'gesetzlich') && 
-                !str_contains($type, 'riester') && 
-                !str_contains($type, 'bav') &&
-                !str_contains($type, 'betrieblich')) {
+            if (! str_contains($type, 'gesetzlich') &&
+                ! str_contains($type, 'riester') &&
+                ! str_contains($type, 'bav') &&
+                ! str_contains($type, 'betrieblich')) {
                 $total += (float) ($contract['amount'] ?? 0);
             }
         }
-        
+
         return $total;
     }
-    
+
     /**
      * Extract and calculate current BAV/Riester from contracts
      */
     private function calculateCurrentBavRiester(array $step3Data): float
     {
         $total = 0.0;
-        
+
         // Check for professional provision
         if ($step3Data['professionalProvisionWorks'] ?? false) {
             $pensionContracts = $step3Data['pensionContracts'] ?? [];
-            
+
             foreach ($pensionContracts as $contract) {
                 $type = strtolower($contract['type'] ?? '');
                 // Identify BAV/Riester contracts
-                if (str_contains($type, 'riester') || 
-                    str_contains($type, 'bav') || 
+                if (str_contains($type, 'riester') ||
+                    str_contains($type, 'bav') ||
                     str_contains($type, 'betrieblich')) {
                     $total += (float) ($contract['amount'] ?? 0);
                 }
             }
         }
-        
+
         return $total;
     }
-} 
+}

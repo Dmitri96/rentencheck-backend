@@ -25,4 +25,4 @@ final class InvalidStepException extends RentencheckException
     {
         parent::__construct("Ungültiger Schritt: {$step}");
     }
-} 
+}

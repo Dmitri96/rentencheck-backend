@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Updates the rentencheck_contracts table to support comprehensive
      * contract data structure with all required fields for pension analysis.
      */
@@ -26,10 +26,10 @@ return new class extends Migration
             $table->decimal('monthly_amount', 10, 2)->nullable()->after('projected_amount');
             $table->year('start_year')->nullable()->after('monthly_amount');
             $table->enum('frequency', ['Einmalig', 'Monatlich', 'Jährlich'])->nullable()->after('start_year');
-            
+
             // Remove old amount field as it's replaced by specific amount fields
             $table->dropColumn('amount');
-            
+
             // Add indexes for better query performance
             $table->index(['category', 'sort_order']);
             $table->index('maturity_year');
@@ -40,7 +40,7 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     * 
+     *
      * Restores the original table structure by removing new fields
      * and restoring the original amount column.
      */
@@ -52,7 +52,7 @@ return new class extends Migration
             $table->dropIndex(['maturity_year']);
             $table->dropIndex(['pension_start_year']);
             $table->dropIndex(['start_year']);
-            
+
             // Remove new fields
             $table->dropColumn([
                 'contract',
@@ -66,9 +66,9 @@ return new class extends Migration
                 'start_year',
                 'frequency',
             ]);
-            
+
             // Restore original amount field
             $table->decimal('amount', 10, 2)->nullable()->after('contract_type');
         });
     }
-}; 
+};

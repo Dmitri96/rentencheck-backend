@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Carbon\Carbon;
 
 final class Client extends Model
 {
@@ -74,7 +74,7 @@ final class Client extends Model
      */
     public function getAgeAttribute(): ?int
     {
-        if (!$this->birth_date) {
+        if (! $this->birth_date) {
             return null;
         }
 
@@ -87,11 +87,11 @@ final class Client extends Model
     public function getFormattedAddressAttribute(): string
     {
         $address = [];
-        
+
         if ($this->street) {
             $address[] = $this->street;
         }
-        
+
         if ($this->postal_code && $this->city) {
             $address[] = "{$this->postal_code} {$this->city}";
         } elseif ($this->city) {

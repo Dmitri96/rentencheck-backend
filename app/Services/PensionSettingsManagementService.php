@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Resources\PensionSettingResource;
 
 /**
  * Business logic service for pension settings management
- * 
+ *
  * Handles complex operations like bulk updates, reset to defaults,
  * and data transformations. Keeps controllers thin and focused.
  */
@@ -25,7 +25,7 @@ class PensionSettingsManagementService
     public function getFormattedSettingsWithResources(): array
     {
         $groupedSettings = PensionSetting::getGroupedSettings();
-        
+
         return $groupedSettings->map(function ($settings, $category) {
             return PensionSettingResource::collection($settings);
         })->toArray();
@@ -38,7 +38,7 @@ class PensionSettingsManagementService
     {
         return DB::transaction(function () use ($settingsData, $userId) {
             $updatedSettings = collect();
-            
+
             foreach ($settingsData as $settingData) {
                 $setting = PensionSetting::findOrFail($settingData['id']);
                 $setting->update(['value' => $settingData['value']]);
@@ -98,4 +98,4 @@ class PensionSettingsManagementService
 
         return $defaults;
     }
-} 
+}

@@ -27,4 +27,4 @@ final class DashboardOverviewResource extends JsonResource
             'recent_activity' => $this->resource['recent_activity'],
         ];
     }
-} 
+}

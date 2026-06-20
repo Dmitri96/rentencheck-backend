@@ -12,6 +12,8 @@ use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
 use App\Services\PensionCalculationService;
 use App\Services\PensionSettingsManagementService;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -29,7 +31,7 @@ final class PensionSettingsController extends Controller
 {
     public function __construct(
         private readonly PensionCalculationService $pensionCalculationService,
-        private readonly PensionSettingsManagementService $managementService
+        private readonly PensionSettingsManagementService $managementService,
     ) {}
 
     /**
@@ -57,7 +59,7 @@ final class PensionSettingsController extends Controller
      */
     public function getParameters(): JsonResponse
     {
-//        Gate::authorize('viewAny', PensionSetting::class);
+        //        Gate::authorize('viewAny', PensionSetting::class);
 
         try {
             $parameters = $this->pensionCalculationService->getPensionParameters();
@@ -99,9 +101,9 @@ final class PensionSettingsController extends Controller
                 'data' => new PensionSettingResource($setting),
             ], 'Einstellung erfolgreich aktualisiert.');
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Einstellung nicht gefunden.', 404);
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             return $this->errorResponse($e->getMessage(), 403);
         } catch (\Exception $e) {
             return $this->handleException($e, 'Failed to update pension setting', $id);
@@ -118,7 +120,7 @@ final class PensionSettingsController extends Controller
         try {
             $updatedSettings = $this->managementService->bulkUpdateSettings(
                 $request->validated('settings'),
-                $request->user()->id
+                $request->user()->id,
             );
 
             $parameters = $this->pensionCalculationService->getPensionParameters();
@@ -128,7 +130,7 @@ final class PensionSettingsController extends Controller
                 'current_parameters' => new PensionParametersResource($parameters),
             ], $updatedSettings->count() . ' Einstellungen erfolgreich aktualisiert.');
 
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             return $this->errorResponse($e->getMessage(), 403);
         } catch (\Exception $e) {
             return $this->handleException($e, 'Failed to bulk update pension settings');
@@ -150,7 +152,7 @@ final class PensionSettingsController extends Controller
                 'current_parameters' => new PensionParametersResource($parameters),
             ], "{$updatedCount} Einstellungen auf Standardwerte zurückgesetzt.");
 
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             return $this->errorResponse($e->getMessage(), 403);
         } catch (\Exception $e) {
             return $this->handleException($e, 'Failed to reset pension settings');
@@ -160,7 +162,7 @@ final class PensionSettingsController extends Controller
     /**
      * Consistent success response format
      */
-    private function successResponse(array $data, string $message = null): JsonResponse
+    private function successResponse(array $data, ?string $message = null): JsonResponse
     {
         $response = ['success' => true] + $data;
 
@@ -185,7 +187,7 @@ final class PensionSettingsController extends Controller
     /**
      * Handle exceptions with logging and user-friendly error messages
      */
-    private function handleException(\Exception $e, string $logMessage, int $contextId = null): JsonResponse
+    private function handleException(\Exception $e, string $logMessage, ?int $contextId = null): JsonResponse
     {
         $context = [
             'error' => $e->getMessage(),
@@ -199,7 +201,7 @@ final class PensionSettingsController extends Controller
         Log::error($logMessage, $context);
 
         return $this->errorResponse(
-            'Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut.'
+            'Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut.',
         );
     }
 }

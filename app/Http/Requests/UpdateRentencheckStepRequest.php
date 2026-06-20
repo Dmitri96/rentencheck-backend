@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateRentencheckStepRequest extends FormRequest
@@ -21,6 +22,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             ]);
         }
     }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -32,7 +34,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -92,19 +94,19 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'statutoryPensionAmount' => 'nullable|numeric|min:0',
             // New: Erwerbsminderungsrente (monatl. Betrag ohne Alter)
             'disabilityPensionAmount' => 'nullable|numeric|min:0',
-            
+
             'professionalProvisionWorks' => 'required|boolean',
             'professionalProvisionAge' => 'nullable|integer|min:0|max:100',
             'professionalProvisionAmount' => 'nullable|numeric|min:0',
-            
+
             'publicServiceAdditionalProvision' => 'required|boolean',
             'publicServiceProvisionAge' => 'nullable|integer|min:0|max:100',
             'publicServiceProvisionAmount' => 'nullable|numeric|min:0',
-            
+
             'civilServiceProvision' => 'required|boolean',
             'civilServiceProvisionAge' => 'nullable|integer|min:0|max:100',
             'civilServiceProvisionAmount' => 'nullable|numeric|min:0',
-            
+
             // Payout contracts with comprehensive fields
             'payoutContracts' => 'array',
             'payoutContracts.*.contract' => 'required_with:payoutContracts.*|string|max:255',
@@ -114,7 +116,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'payoutContracts.*.maturityYear' => 'required_with:payoutContracts.*|integer|min:2024|max:2100',
             'payoutContracts.*.guaranteedAmount' => 'required_with:payoutContracts.*|numeric|min:0',
             'payoutContracts.*.projectedAmount' => 'nullable|numeric|min:0',
-            
+
             // Pension contracts with comprehensive fields
             'pensionContracts' => 'array',
             'pensionContracts.*.contract' => 'required_with:pensionContracts.*|string|max:255',
@@ -125,7 +127,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'pensionContracts.*.guaranteedAmount' => 'nullable|numeric|min:0',
             'pensionContracts.*.projectedAmount' => 'nullable|numeric|min:0',
             'pensionContracts.*.monthlyAmount' => 'required_with:pensionContracts.*|numeric|min:0',
-            
+
             // Additional income with comprehensive fields
             'additionalIncome' => 'array',
             'additionalIncome.*.type' => 'required_with:additionalIncome.*|string|max:255',
@@ -227,28 +229,28 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'statutoryPensionAmount.min' => 'Der Betrag für gesetzliche Rente muss mindestens 0 sein.',
             'disabilityPensionAmount.numeric' => 'Der Betrag für Erwerbsminderungsrente muss eine Zahl sein.',
             'disabilityPensionAmount.min' => 'Der Betrag für Erwerbsminderungsrente muss mindestens 0 sein.',
-            
+
             'professionalProvisionWorks.required' => 'Die Angabe zur betrieblichen Altersvorsorge ist erforderlich.',
             'professionalProvisionAge.integer' => 'Das Alter für betriebliche Altersvorsorge muss eine ganze Zahl sein.',
             'professionalProvisionAge.min' => 'Das Alter für betriebliche Altersvorsorge muss mindestens 0 Jahre betragen.',
             'professionalProvisionAge.max' => 'Das Alter für betriebliche Altersvorsorge darf maximal 100 Jahre betragen.',
             'professionalProvisionAmount.numeric' => 'Der Betrag für betriebliche Altersvorsorge muss eine Zahl sein.',
             'professionalProvisionAmount.min' => 'Der Betrag für betriebliche Altersvorsorge muss mindestens 0 sein.',
-            
+
             'publicServiceAdditionalProvision.required' => 'Die Angabe zur öffentlich-rechtlichen Zusatzversorgung ist erforderlich.',
             'publicServiceProvisionAge.integer' => 'Das Alter für öffentlich-rechtliche Zusatzversorgung muss eine ganze Zahl sein.',
             'publicServiceProvisionAge.min' => 'Das Alter für öffentlich-rechtliche Zusatzversorgung muss mindestens 0 Jahre betragen.',
             'publicServiceProvisionAge.max' => 'Das Alter für öffentlich-rechtliche Zusatzversorgung darf maximal 100 Jahre betragen.',
             'publicServiceProvisionAmount.numeric' => 'Der Betrag für öffentlich-rechtliche Zusatzversorgung muss eine Zahl sein.',
             'publicServiceProvisionAmount.min' => 'Der Betrag für öffentlich-rechtliche Zusatzversorgung muss mindestens 0 sein.',
-            
+
             'civilServiceProvision.required' => 'Die Angabe zur Beamtenversorgung ist erforderlich.',
             'civilServiceProvisionAge.integer' => 'Das Alter für Beamtenversorgung muss eine ganze Zahl sein.',
             'civilServiceProvisionAge.min' => 'Das Alter für Beamtenversorgung muss mindestens 0 Jahre betragen.',
             'civilServiceProvisionAge.max' => 'Das Alter für Beamtenversorgung darf maximal 100 Jahre betragen.',
             'civilServiceProvisionAmount.numeric' => 'Der Betrag für Beamtenversorgung muss eine Zahl sein.',
             'civilServiceProvisionAmount.min' => 'Der Betrag für Beamtenversorgung muss mindestens 0 sein.',
-            
+
             // Payout contract messages
             'payoutContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
             'payoutContracts.*.contract.max' => 'Der Vertragsname darf maximal 255 Zeichen lang sein.',
@@ -269,7 +271,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'payoutContracts.*.guaranteedAmount.min' => 'Der garantierte Betrag muss mindestens 0 sein.',
             'payoutContracts.*.projectedAmount.numeric' => 'Der prognostizierte Betrag muss eine Zahl sein.',
             'payoutContracts.*.projectedAmount.min' => 'Der prognostizierte Betrag muss mindestens 0 sein.',
-            
+
             // Pension contract messages
             'pensionContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
             'pensionContracts.*.contract.max' => 'Der Vertragsname darf maximal 255 Zeichen lang sein.',
@@ -293,7 +295,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'pensionContracts.*.monthlyAmount.required_with' => 'Der monatliche Betrag ist erforderlich.',
             'pensionContracts.*.monthlyAmount.numeric' => 'Der monatliche Betrag muss eine Zahl sein.',
             'pensionContracts.*.monthlyAmount.min' => 'Der monatliche Betrag muss mindestens 0 sein.',
-            
+
             // Additional income messages
             'additionalIncome.*.type.required_with' => 'Der Einkommenstyp ist erforderlich.',
             'additionalIncome.*.type.max' => 'Der Einkommenstyp darf maximal 255 Zeichen lang sein.',
@@ -376,4 +378,4 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'location' => 'Ort',
         ];
     }
-} 
+}

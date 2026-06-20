@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * PensionParameters API Resource
- * 
+ *
  * Transforms pension calculation parameters for API responses
  */
 class PensionParametersResource extends JsonResource
@@ -48,4 +48,4 @@ class PensionParametersResource extends JsonResource
             ],
         ];
     }
-} 
+}

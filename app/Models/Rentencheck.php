@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Carbon\Carbon;
 
 class Rentencheck extends Model
 {
@@ -129,7 +128,7 @@ class Rentencheck extends Model
     public function completeStep(int $step): void
     {
         $completedSteps = $this->completed_steps ?? [];
-        if (!in_array($step, $completedSteps)) {
+        if (! in_array($step, $completedSteps)) {
             $completedSteps[] = $step;
             $this->completed_steps = $completedSteps;
         }
@@ -142,6 +141,7 @@ class Rentencheck extends Model
     {
         $totalSteps = 5;
         $completedSteps = count($this->completed_steps ?? []);
+
         return (int) round(($completedSteps / $totalSteps) * 100);
     }
 
@@ -152,31 +152,31 @@ class Rentencheck extends Model
     {
         // Check if we have at least 4 of 5 steps completed, or all steps have data
         $completedStepsCount = count($this->completed_steps ?? []);
-        
+
         // Alternative check: if all step data fields have content
         $hasStepData = [
-            !empty($this->step_1_data),
-            !empty($this->step_2_data), 
-            !empty($this->step_3_data),
-            !empty($this->step_4_data),
-            !empty($this->step_5_data)
+            ! empty($this->step_1_data),
+            ! empty($this->step_2_data),
+            ! empty($this->step_3_data),
+            ! empty($this->step_4_data),
+            ! empty($this->step_5_data),
         ];
-        
+
         $stepDataCount = count(array_filter($hasStepData));
-        
+
         // Special case: if step 5 has minimal data (just date OR location), count it as having data
-        if (!empty($this->step_5_data)) {
+        if (! empty($this->step_5_data)) {
             $step5Data = $this->step_5_data;
             if (isset($step5Data['date']) || isset($step5Data['location'])) {
                 $stepDataCount = max($stepDataCount, 5); // Count step 5 as having data
             }
         }
-        
+
         // Consider complete if either:
         // 1. All 5 steps are marked as completed, OR
         // 2. At least 4 steps are marked as completed and all 5 have data, OR
         // 3. At least 4 steps are marked as completed and steps 1-4 have data (step 5 can be optional)
-        return $completedStepsCount === 5 
+        return $completedStepsCount === 5
             || ($completedStepsCount >= 4 && $stepDataCount === 5)
             || ($completedStepsCount >= 4 && $stepDataCount >= 4);
     }
@@ -199,12 +199,12 @@ class Rentencheck extends Model
     {
         $stepField = "step_{$step}_data";
         $this->$stepField = $data;
-        
+
         // Auto-complete step if data seems valid
         if ($this->isStepDataValid($step, $data)) {
             $this->completeStep($step);
         }
-        
+
         $this->save();
     }
 
@@ -220,42 +220,42 @@ class Rentencheck extends Model
         switch ($step) {
             case 1:
                 // Step 1: Personal and Financial Information
-                return !empty($data['profession']) 
-                    && !empty($data['maritalStatus'])
+                return ! empty($data['profession'])
+                    && ! empty($data['maritalStatus'])
                     && isset($data['currentGrossIncome'])
                     && isset($data['currentNetIncome']);
-                    
+
             case 2:
                 // Step 2: Expectations
-                return isset($data['currentAge']) 
+                return isset($data['currentAge'])
                     && isset($data['retirementAge'])
                     && isset($data['pensionWishCurrentValue']);
-                    
+
             case 3:
                 // Step 3: Contract Overview - At least one boolean field must be set
                 return isset($data['statutoryPensionClaims'])
                     || isset($data['professionalProvisionWorks'])
                     || isset($data['publicServiceAdditionalProvision'])
                     || isset($data['civilServiceProvision']);
-                    
+
             case 4:
                 // Step 4: Important Aspects - Check if aspectRatings object has values
-                if (!isset($data['aspectRatings']) || !is_array($data['aspectRatings'])) {
+                if (! isset($data['aspectRatings']) || ! is_array($data['aspectRatings'])) {
                     return false;
                 }
-                
+
                 // Check if at least some aspect ratings are filled
                 $aspectRatings = $data['aspectRatings'];
-                $filledRatings = array_filter($aspectRatings, function($value) {
-                    return !empty($value) && $value !== '';
+                $filledRatings = array_filter($aspectRatings, function ($value) {
+                    return ! empty($value) && $value !== '';
                 });
-                
+
                 return count($filledRatings) >= 3; // At least 3 aspects rated
-                
+
             case 5:
                 // Step 5: Conclusion
-                return !empty($data['date']) && !empty($data['location']);
-                
+                return ! empty($data['date']) && ! empty($data['location']);
+
             default:
                 return false;
         }

@@ -15,7 +15,7 @@ final class AdvisorResource extends JsonResource
     public function toArray(Request $request): array
     {
         $totalRentenchecks = $this->clients->sum('rentenchecks_count');
-        
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -31,10 +31,10 @@ final class AdvisorResource extends JsonResource
                 'total_clients' => $this->clients_count,
                 'total_rentenchecks' => $totalRentenchecks,
                 'completed_rentenchecks' => $this->completed_rentenchecks_count,
-                'completion_rate' => $totalRentenchecks > 0 
-                    ? round(($this->completed_rentenchecks_count / $totalRentenchecks) * 100, 1) 
+                'completion_rate' => $totalRentenchecks > 0
+                    ? round(($this->completed_rentenchecks_count / $totalRentenchecks) * 100, 1)
                     : 0,
             ],
         ];
     }
-} 
+}

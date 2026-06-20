@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Bulk Update Pension Settings Request
- * 
+ *
  * Handles validation for bulk updating multiple pension settings
  */
 class BulkUpdatePensionSettingsRequest extends FormRequest
@@ -63,4 +63,4 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
             'settings.*.value' => 'Wert',
         ];
     }
-} 
+}

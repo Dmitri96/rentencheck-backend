@@ -25,7 +25,7 @@ final class ClientController extends Controller
         $query = Client::query();
 
         // Admins can see all clients, advisors only see their own
-        if (!$request->user()->isAdmin()) {
+        if (! $request->user()->isAdmin()) {
             $query->forUser($request->user()->id);
         }
 
@@ -94,7 +94,7 @@ final class ClientController extends Controller
     public function show(Request $request, Client $client): JsonResponse
     {
         // Ensure the client belongs to the authenticated user (unless admin)
-        if (!$request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
+        if (! $request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
             return response()->json([
                 'message' => 'Mandant nicht gefunden',
             ], 404);
@@ -111,7 +111,7 @@ final class ClientController extends Controller
     public function update(StoreClientRequest $request, Client $client): JsonResponse
     {
         // Ensure the client belongs to the authenticated user (unless admin)
-        if (!$request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
+        if (! $request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
             return response()->json([
                 'message' => 'Mandant nicht gefunden',
             ], 404);
@@ -166,7 +166,7 @@ final class ClientController extends Controller
     public function destroy(Request $request, Client $client): JsonResponse
     {
         // Ensure the client belongs to the authenticated user (unless admin)
-        if (!$request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
+        if (! $request->user()->isAdmin() && $client->user_id !== $request->user()->id) {
             return response()->json([
                 'message' => 'Mandant nicht gefunden',
             ], 404);

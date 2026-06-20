@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -14,8 +15,8 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -67,13 +68,16 @@ class User extends Authenticatable
      * User status constants
      */
     const STATUS_ACTIVE = 'active';
+
     const STATUS_BLOCKED = 'blocked';
+
     const STATUS_PENDING = 'pending';
 
     /**
      * Role constants
      */
     const ROLE_ADMIN = 'admin';
+
     const ROLE_ADVISOR = 'financial_advisor';
 
     /**
@@ -84,7 +88,7 @@ class User extends Authenticatable
         if ($this->first_name && $this->last_name) {
             return "{$this->first_name} {$this->last_name}";
         }
-        
+
         return $this->name ?? '';
     }
 

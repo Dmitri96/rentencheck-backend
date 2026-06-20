@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Update Pension Setting Request
- * 
+ *
  * Handles validation for updating individual pension settings
  */
 class UpdatePensionSettingRequest extends FormRequest
@@ -61,4 +61,4 @@ class UpdatePensionSettingRequest extends FormRequest
             'description_de' => 'Deutsche Beschreibung',
         ];
     }
-} 
+}
