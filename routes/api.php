@@ -21,11 +21,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Authentication routes
+// Authentication routes (public — 10 requests / minute / IP to slow brute force)
 Route::prefix('auth')->group(function () {
     // Public routes
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/login', [AuthController::class, 'login']);
+    });
 
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
@@ -34,61 +36,67 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Admin routes - only for admin users
-Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADMIN])->prefix('admin')->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [AdminController::class, 'dashboard']);
+// All authenticated routes share a baseline throttle (120 req/min/user).
+// Tighter limits live per-route where appropriate (e.g. auth above).
+Route::middleware('throttle:120,1')->group(function () {
 
-    // Advisor management
-    Route::prefix('advisors')->group(function () {
-        Route::get('/', [AdminController::class, 'getAdvisors']);
-        Route::post('/', [AdminController::class, 'createAdvisor']);
-        Route::get('/{advisorId}', [AdminController::class, 'getAdvisorDetails']);
-        Route::patch('/{advisorId}/status', [AdminController::class, 'updateAdvisorStatus']);
-        Route::delete('/{advisorId}', [AdminController::class, 'deleteAdvisor']);
+    // Admin routes - only for admin users
+    Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADMIN])->prefix('admin')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+
+        // Advisor management
+        Route::prefix('advisors')->group(function () {
+            Route::get('/', [AdminController::class, 'getAdvisors']);
+            Route::post('/', [AdminController::class, 'createAdvisor']);
+            Route::get('/{advisorId}', [AdminController::class, 'getAdvisorDetails']);
+            Route::patch('/{advisorId}/status', [AdminController::class, 'updateAdvisorStatus']);
+            Route::delete('/{advisorId}', [AdminController::class, 'deleteAdvisor']);
+        });
+
+        // Pension Settings management
+        Route::prefix('pension-settings')->group(function () {
+            Route::get('/', [PensionSettingsController::class, 'index']);
+            Route::put('/{id}', [PensionSettingsController::class, 'update']);
+            Route::patch('/bulk-update', [PensionSettingsController::class, 'bulkUpdate']);
+            Route::post('/reset-defaults', [PensionSettingsController::class, 'resetToDefaults']);
+        });
     });
 
-    // Pension Settings management
-    Route::prefix('pension-settings')->group(function () {
-        Route::get('/', [PensionSettingsController::class, 'index']);
-        Route::put('/{id}', [PensionSettingsController::class, 'update']);
-        Route::patch('/bulk-update', [PensionSettingsController::class, 'bulkUpdate']);
-        Route::post('/reset-defaults', [PensionSettingsController::class, 'resetToDefaults']);
-    });
-});
+    // Advisor routes - for financial advisors and admins
+    Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADVISOR . ',' . User::ROLE_ADMIN])->group(function () {
+        // File download route
+        Route::get('/files/{fileId}/download', [FileController::class, 'download'])->name('file.download');
 
-// Advisor routes - for financial advisors and admins
-Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADVISOR . ',' . User::ROLE_ADMIN])->group(function () {
-    // File download route
-    Route::get('/files/{fileId}/download', [FileController::class, 'download'])->name('file.download');
+        // Client management routes
+        Route::apiResource('clients', ClientController::class);
 
-    // Client management routes
-    Route::apiResource('clients', ClientController::class);
-
-    // Rentencheck routes (nested under clients)
-    Route::prefix('clients/{clientId}/rentenchecks')->group(function () {
-        Route::get('/', [RentencheckController::class, 'index']);
-        Route::post('/', [RentencheckController::class, 'store']);
-        Route::get('/{rentencheckId}', [RentencheckController::class, 'show']);
-        Route::get('/{rentencheckId}/calculation', [RentencheckController::class, 'getPensionCalculation']);
-        Route::put('/{rentencheckId}/step/{step}', [RentencheckController::class, 'updateStep']);
-        Route::put('/{rentencheckId}/step/{step}/complete', [RentencheckController::class, 'markStepCompleted']);
-        Route::put('/{rentencheckId}/complete', [RentencheckController::class, 'complete']);
-        Route::get('/{rentencheckId}/pdf', [RentencheckController::class, 'downloadPdf']);
-        Route::delete('/{rentencheckId}', [RentencheckController::class, 'destroy']);
-    });
-});
-
-// General authenticated routes
-Route::middleware('auth:sanctum')->group(function () {
-    // User profile routes
-    Route::get('/profile', function (Request $request) {
-        return response()->json([
-            'user' => $request->user()->load('roles'),
-            'permissions' => $request->user()->getAllPermissions()->pluck('name'),
-        ]);
+        // Rentencheck routes (nested under clients)
+        Route::prefix('clients/{clientId}/rentenchecks')->group(function () {
+            Route::get('/', [RentencheckController::class, 'index']);
+            Route::post('/', [RentencheckController::class, 'store']);
+            Route::get('/{rentencheckId}', [RentencheckController::class, 'show']);
+            Route::get('/{rentencheckId}/calculation', [RentencheckController::class, 'getPensionCalculation']);
+            Route::put('/{rentencheckId}/step/{step}', [RentencheckController::class, 'updateStep']);
+            Route::put('/{rentencheckId}/step/{step}/complete', [RentencheckController::class, 'markStepCompleted']);
+            Route::put('/{rentencheckId}/complete', [RentencheckController::class, 'complete']);
+            Route::get('/{rentencheckId}/pdf', [RentencheckController::class, 'downloadPdf']);
+            Route::delete('/{rentencheckId}', [RentencheckController::class, 'destroy']);
+        });
     });
 
-    // Pension parameters (read-only for calculations)
-    Route::get('/pension-parameters', [PensionSettingsController::class, 'getParameters']);
-});
+    // General authenticated routes
+    Route::middleware('auth:sanctum')->group(function () {
+        // User profile routes
+        Route::get('/profile', function (Request $request) {
+            return response()->json([
+                'user' => $request->user()->load('roles'),
+                'permissions' => $request->user()->getAllPermissions()->pluck('name'),
+            ]);
+        });
+
+        // Pension parameters (read-only for calculations)
+        Route::get('/pension-parameters', [PensionSettingsController::class, 'getParameters']);
+    });
+
+}); // end throttle:120,1 group
