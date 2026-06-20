@@ -523,63 +523,9 @@ parameters:
 			path: app/Models/File.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$value\.$#'
-			identifier: property.notFound
-			count: 16
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: mixed, key\: mixed, value\: mixed, unit\: mixed, description\: mixed, description_de\: mixed, formatted_value\: non\-falsy\-string\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: mixed, key\: mixed, value\: mixed, unit\: mixed, description\: mixed, description_de\: mixed, formatted_value\: non\-falsy\-string\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
 			message: '#^Class App\\Models\\PensionSetting uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Method App\\Models\\PensionSetting\:\:getByCategory\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Method App\\Models\\PensionSetting\:\:getEconomicAssumptions\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Method App\\Models\\PensionSetting\:\:getFormattedSettings\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Method App\\Models\\PensionSetting\:\:getGroupedSettings\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
-			identifier: missingType.generics
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Method App\\Models\\PensionSetting\:\:getSocialInsuranceRates\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Method App\\Models\\PensionSetting\:\:getTaxBrackets\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Models/PensionSetting.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 16
 			path: app/Models/PensionSetting.php
 
 		-
@@ -839,6 +785,108 @@ parameters:
 			identifier: missingType.parameter
 			count: 1
 			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description_de\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 18
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{id\: mixed, key\: mixed, value\: mixed, unit\: mixed, description\: mixed, description_de\: mixed, formatted_value\: non\-falsy\-string\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: mixed, key\: mixed, value\: mixed, unit\: mixed, description\: mixed, description_de\: mixed, formatted_value\: non\-falsy\-string\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:activeSettings\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:getByCategory\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:getEconomicAssumptions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:getFormattedSettings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:getGroupedSettings\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:getSocialInsuranceRates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PensionSettingRepository\:\:getTaxBrackets\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Repositories/PensionSettingRepository.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 16
+			path: app/Repositories/PensionSettingRepository.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$full_name\.$#'

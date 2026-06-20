@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
+use App\Repositories\PensionSettingRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -19,12 +20,14 @@ use Illuminate\Support\Facades\Log;
  */
 class PensionSettingsManagementService
 {
+    public function __construct(private readonly PensionSettingRepository $settings) {}
+
     /**
      * Get all pension settings grouped by category with API Resources transformation
      */
     public function getFormattedSettingsWithResources(): array
     {
-        $groupedSettings = PensionSetting::getGroupedSettings();
+        $groupedSettings = $this->settings->getGroupedSettings();
 
         return $groupedSettings->map(function ($settings, $category) {
             return PensionSettingResource::collection($settings);

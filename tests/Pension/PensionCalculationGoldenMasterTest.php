@@ -28,7 +28,7 @@ uses(LazilyRefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->seed(PensionSettingsSeeder::class);
-    $this->service = new PensionCalculationService;
+    $this->service = app(PensionCalculationService::class);
 });
 
 /**

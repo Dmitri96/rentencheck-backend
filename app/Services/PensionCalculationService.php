@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\PensionSetting;
 use App\Models\Rentencheck;
+use App\Repositories\PensionSettingRepository;
 
 /**
  * Professional German Pension Calculation Service
@@ -21,12 +21,12 @@ class PensionCalculationService
 
     private array $taxBrackets;
 
-    public function __construct()
+    public function __construct(private readonly PensionSettingRepository $settings)
     {
         // Load all settings once during initialization
-        $this->economicAssumptions = PensionSetting::getEconomicAssumptions();
-        $this->socialInsuranceRates = PensionSetting::getSocialInsuranceRates();
-        $this->taxBrackets = PensionSetting::getTaxBrackets();
+        $this->economicAssumptions = $this->settings->getEconomicAssumptions();
+        $this->socialInsuranceRates = $this->settings->getSocialInsuranceRates();
+        $this->taxBrackets = $this->settings->getTaxBrackets();
     }
 
     /**
@@ -34,7 +34,7 @@ class PensionCalculationService
      */
     public function calculateStatutoryPensionAfterInsurance(float $grossPension): float
     {
-        $totalInsuranceRate = PensionSetting::getTotalInsuranceRate();
+        $totalInsuranceRate = $this->settings->getTotalInsuranceRate();
 
         return $grossPension * (1 - $totalInsuranceRate);
     }
@@ -113,8 +113,8 @@ class PensionCalculationService
      */
     public function calculateSolidaritySurcharge(float $incomeTax): float
     {
-        $solidarityThreshold = PensionSetting::getValue('solidarity_surcharge_threshold') ?? 19450.0;
-        $solidarityRate = PensionSetting::getValue('solidarity_surcharge_rate') ?? 5.5;
+        $solidarityThreshold = $this->settings->getValue('solidarity_surcharge_threshold') ?? 19450.0;
+        $solidarityRate = $this->settings->getValue('solidarity_surcharge_rate') ?? 5.5;
 
         if ($incomeTax >= $solidarityThreshold) {
             return $incomeTax * ($solidarityRate / 100);
@@ -138,22 +138,22 @@ class PensionCalculationService
                 'health_insurance_rate' => $this->socialInsuranceRates['health_insurance_rate'],
                 'additional_health_insurance_rate' => $this->socialInsuranceRates['additional_health_insurance_rate'],
                 'care_insurance_rate' => $this->socialInsuranceRates['care_insurance_rate'],
-                'total_insurance_rate' => PensionSetting::getTotalInsuranceRate() * 100,
+                'total_insurance_rate' => $this->settings->getTotalInsuranceRate() * 100,
                 'health_insurance_exemption_bav' => $this->socialInsuranceRates['health_insurance_exemption_bav'],
             ],
             'tax_system' => [
                 'rates' => $this->taxBrackets['rates'],
                 'thresholds' => $this->taxBrackets['thresholds'],
-                'solidarity_surcharge_rate' => (float) (PensionSetting::getValue('solidarity_surcharge_rate') ?? 5.5),
-                'solidarity_surcharge_threshold' => (float) (PensionSetting::getValue('solidarity_surcharge_threshold') ?? 19450.0),
+                'solidarity_surcharge_rate' => (float) ($this->settings->getValue('solidarity_surcharge_rate') ?? 5.5),
+                'solidarity_surcharge_threshold' => (float) ($this->settings->getValue('solidarity_surcharge_threshold') ?? 19450.0),
             ],
             'regional_taxes' => [
-                'church_tax_bavaria_bw' => (float) (PensionSetting::getValue('church_tax_bavaria_bw') ?? 8.0),
-                'church_tax_other_states' => (float) (PensionSetting::getValue('church_tax_other_states') ?? 9.0),
+                'church_tax_bavaria_bw' => (float) ($this->settings->getValue('church_tax_bavaria_bw') ?? 8.0),
+                'church_tax_other_states' => (float) ($this->settings->getValue('church_tax_other_states') ?? 9.0),
             ],
             'demographics' => [
-                'retirement_age' => (int) (PensionSetting::getValue('retirement_age') ?? 67),
-                'life_expectancy' => (int) (PensionSetting::getValue('life_expectancy') ?? 85),
+                'retirement_age' => (int) ($this->settings->getValue('retirement_age') ?? 67),
+                'life_expectancy' => (int) ($this->settings->getValue('life_expectancy') ?? 85),
             ],
         ];
     }
@@ -165,8 +165,8 @@ class PensionCalculationService
     {
         $currentAge = $pensionData['current_age'] ?? 30;
         // Allow override from settings if provided
-        $retirementAge = $pensionData['retirement_age'] ?? (int) (PensionSetting::getValue('retirement_age') ?? 67);
-        $lifeExpectancy = $pensionData['life_expectancy'] ?? (int) (PensionSetting::getValue('life_expectancy') ?? 85);
+        $retirementAge = $pensionData['retirement_age'] ?? (int) ($this->settings->getValue('retirement_age') ?? 67);
+        $lifeExpectancy = $pensionData['life_expectancy'] ?? (int) ($this->settings->getValue('life_expectancy') ?? 85);
         $desiredPension = $pensionData['desired_pension'] ?? 1600;
         $statutoryPensionGross = $pensionData['statutory_pension_gross'] ?? 719;
 
