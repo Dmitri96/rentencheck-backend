@@ -1,6 +1,24 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Method App\\Calculators\\PensionCalculator\:\:extractBavRiester\(\) has parameter \$step3 with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Calculators/PensionCalculator.php
+
+		-
+			message: '#^Method App\\Calculators\\PensionCalculator\:\:extractLegalPension\(\) has parameter \$step3 with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Calculators/PensionCalculator.php
+
+		-
+			message: '#^Method App\\Calculators\\PensionCalculator\:\:extractPrivatePension\(\) has parameter \$step3 with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Calculators/PensionCalculator.php
+
+		-
 			message: '#^Method App\\Http\\Controllers\\Api\\AdminController\:\:getAdvisors\(\) should return Illuminate\\Http\\Resources\\Json\\AnonymousResourceCollection but returns Illuminate\\Http\\JsonResponse\.$#'
 			identifier: return.type
 			count: 1
@@ -1141,36 +1159,6 @@ parameters:
 			path: app/Services/FileService.php
 
 		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:calculateComprehensivePensionAnalysis\(\) has parameter \$pensionData with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:calculateComprehensivePensionAnalysis\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:calculateCurrentBavRiester\(\) has parameter \$step3Data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:calculateCurrentLegalPension\(\) has parameter \$step3Data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Method App\\Services\\PensionCalculationService\:\:calculateCurrentPrivatePension\(\) has parameter \$step3Data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
 			message: '#^Method App\\Services\\PensionCalculationService\:\:getPensionParameters\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1183,20 +1171,8 @@ parameters:
 			path: app/Services/PensionCalculationService.php
 
 		-
-			message: '#^Property App\\Services\\PensionCalculationService\:\:\$economicAssumptions type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Property App\\Services\\PensionCalculationService\:\:\$socialInsuranceRates type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PensionCalculationService.php
-
-		-
-			message: '#^Property App\\Services\\PensionCalculationService\:\:\$taxBrackets type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
+			message: '#^Parameter \#2 \$brackets of method App\\Calculators\\TaxCalculator\:\:incomeTax\(\) expects array\{rates\: array\<string, float\>, thresholds\: array\<string, float\>\}, array given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Services/PensionCalculationService.php
 
