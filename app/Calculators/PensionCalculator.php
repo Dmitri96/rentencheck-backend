@@ -148,6 +148,10 @@ final class PensionCalculator
     /**
      * Sum of contracts identified as legal/statutory pension entries from
      * step 3 data. Returns 0 when statutory claims aren't asserted.
+     *
+     * Match is strict "gesetzlich" — a previous `rente` substring fallback
+     * also matched "Privatrente" and double-counted it across legal + private
+     * columns of the advisor's chart.
      */
     private function extractLegalPension(array $step3): float
     {
@@ -158,7 +162,7 @@ final class PensionCalculator
         $total = 0.0;
         foreach ($step3['pensionContracts'] ?? [] as $contract) {
             $type = strtolower((string) ($contract['type'] ?? ''));
-            if (str_contains($type, 'gesetzlich') || str_contains($type, 'rente')) {
+            if (str_contains($type, 'gesetzlich')) {
                 $total += (float) ($contract['amount'] ?? 0);
             }
         }
