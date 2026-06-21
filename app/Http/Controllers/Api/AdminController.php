@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Exceptions\Domain\BusinessRuleViolationException;
+use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\CreateAdvisorRequest;
 use App\Http\Requests\GetAdvisorsRequest;
 use App\Http\Requests\UpdateAdvisorStatusRequest;
@@ -16,169 +17,86 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * Admin Controller for managing financial advisors and dashboard overview.
+ * Thin HTTP layer for the admin surface.
  *
- * This controller follows clean architecture principles:
- * - Thin controller with business logic delegated to AdminService
- * - Uses Form Requests for validation and authorization
- * - Uses API Resources for response transformation
- * - Dependency injection for service layer
+ * Business logic lives in AdminService. Authorization comes from the route's
+ * role:admin middleware. Errors are mapped by the global exception renderer
+ * in bootstrap/app.php — no try/catch needed here.
  */
-final class AdminController extends Controller
+final class AdminController extends BaseApiController
 {
     public function __construct(
         private readonly AdminService $adminService,
     ) {}
 
-    /**
-     * Get admin dashboard overview with statistics and recent activity.
-     *
-     * @return JsonResponse Dashboard overview data
-     */
     public function dashboard(): JsonResponse
     {
-        try {
-            $overviewData = $this->adminService->getDashboardOverview();
+        $overview = $this->adminService->getDashboardOverview();
 
-            return (new DashboardOverviewResource($overviewData))
-                ->response()
-                ->setStatusCode(200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Fehler beim Laden des Dashboards.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Ein unerwarteter Fehler ist aufgetreten.',
-            ], 500);
-        }
+        return (new DashboardOverviewResource($overview))->response()->setStatusCode(200);
     }
 
-    /**
-     * Get paginated list of financial advisors with filtering and statistics.
-     *
-     * @param  GetAdvisorsRequest  $request  Validated request with filters
-     * @return AnonymousResourceCollection Paginated advisors with statistics
-     */
     public function getAdvisors(GetAdvisorsRequest $request): AnonymousResourceCollection
     {
-        try {
-            $advisors = $this->adminService->getAdvisors($request);
-
-            return AdvisorResource::collection($advisors);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Fehler beim Laden der Berater.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Ein unerwarteter Fehler ist aufgetreten.',
-            ], 500);
-        }
+        return AdvisorResource::collection($this->adminService->getAdvisors($request));
     }
 
-    /**
-     * Create a new financial advisor with role assignment.
-     *
-     * @param  CreateAdvisorRequest  $request  Validated request with advisor data
-     * @return JsonResponse Success response with created advisor data
-     */
     public function createAdvisor(CreateAdvisorRequest $request): JsonResponse
     {
-        try {
-            $advisor = $this->adminService->createAdvisor($request);
+        $advisor = $this->adminService->createAdvisor($request);
 
-            return response()->json([
-                'message' => 'Berater wurde erfolgreich erstellt.',
+        return $this->createdResponse(
+            [
                 'advisor' => [
                     'id' => $advisor->id,
                     'name' => $advisor->full_name,
                     'email' => $advisor->email,
                     'status' => $advisor->status,
                 ],
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Fehler beim Erstellen des Beraters.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Ein unerwarteter Fehler ist aufgetreten.',
-            ], 500);
-        }
+            ],
+            'Berater wurde erfolgreich erstellt.',
+        );
     }
 
-    /**
-     * Update advisor status (active/blocked).
-     *
-     * @param  UpdateAdvisorStatusRequest  $request  Validated request with status
-     * @param  int  $advisorId  ID of advisor to update
-     * @return JsonResponse Success response with updated advisor
-     */
     public function updateAdvisorStatus(UpdateAdvisorStatusRequest $request, int $advisorId): JsonResponse
     {
-        try {
-            $advisor = $this->adminService->updateAdvisorStatus(
-                $advisorId,
-                $request->validated('status'),
-            );
+        $advisor = $this->adminService->updateAdvisorStatus($advisorId, $request->validated('status'));
+        $action = $request->validated('status') === 'blocked' ? 'gesperrt' : 'aktiviert';
 
-            $action = $request->validated('status') === 'blocked' ? 'gesperrt' : 'aktiviert';
-
-            return response()->json([
-                'message' => "Berater wurde erfolgreich {$action}.",
+        return $this->successResponse(
+            [
                 'advisor' => [
                     'id' => $advisor->id,
                     'name' => $advisor->full_name,
                     'email' => $advisor->email,
                     'status' => $advisor->status,
                 ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Fehler beim Aktualisieren des Berater-Status.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Ein unerwarteter Fehler ist aufgetreten.',
-            ], 500);
-        }
+            ],
+            "Berater wurde erfolgreich {$action}.",
+        );
     }
 
-    /**
-     * Delete an advisor (only if no clients associated).
-     *
-     * @param  int  $advisorId  ID of advisor to delete
-     * @return JsonResponse Success or error response
-     */
     public function deleteAdvisor(int $advisorId): JsonResponse
     {
         try {
             $this->adminService->deleteAdvisor($advisorId);
-
-            return response()->json([
-                'message' => 'Berater wurde erfolgreich gelöscht.',
-            ]);
         } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-                'error' => 'Advisor has clients',
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Fehler beim Löschen des Beraters.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Ein unerwarteter Fehler ist aufgetreten.',
-            ], 500);
+            // The service throws InvalidArgumentException when the advisor still
+            // has clients. Promote to a domain exception so the global renderer
+            // maps it to 422 with a stable error_code.
+            throw new BusinessRuleViolationException($e->getMessage());
         }
+
+        return $this->successResponse(
+            ['id' => $advisorId],
+            'Berater wurde erfolgreich gelöscht.',
+        );
     }
 
-    /**
-     * Get detailed advisor information with analytics and monthly statistics.
-     *
-     * @param  int  $advisorId  ID of advisor to get details for
-     * @return JsonResponse Detailed advisor information
-     */
     public function getAdvisorDetails(int $advisorId): JsonResponse
     {
-        try {
-            $advisorDetails = $this->adminService->getAdvisorDetails($advisorId);
+        $details = $this->adminService->getAdvisorDetails($advisorId);
 
-            return (new AdvisorDetailResource($advisorDetails))
-                ->response()
-                ->setStatusCode(200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Fehler beim Laden der Berater-Details.',
-                'error' => config('app.debug') ? $e->getMessage() : 'Ein unerwarteter Fehler ist aufgetreten.',
-            ], 500);
-        }
+        return (new AdvisorDetailResource($details))->response()->setStatusCode(200);
     }
 }

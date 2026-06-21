@@ -46,44 +46,10 @@
         "/admin/dashboard": {
             "get": {
                 "operationId": "admin.dashboard",
-                "summary": "Get admin dashboard overview with statistics and recent activity",
                 "tags": [
                     "Admin"
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Laden des Dashboards."
-                                        },
-                                        "error": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "string"
-                                                },
-                                                {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Ein unerwarteter Fehler ist aufgetreten."
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "`DashboardOverviewResource`",
                         "content": {
@@ -111,7 +77,6 @@
         "/admin/advisors": {
             "get": {
                 "operationId": "admin.getAdvisors",
-                "summary": "Get paginated list of financial advisors with filtering and statistics",
                 "tags": [
                     "Admin"
                 ],
@@ -180,7 +145,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Array of items",
+                        "description": "Paginated set of `AdvisorResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -189,12 +154,130 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "$ref": "#/components/schemas/AdvisorResource"
                                             }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "data"
+                                        "data",
+                                        "links",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -213,7 +296,6 @@
             },
             "post": {
                 "operationId": "admin.createAdvisor",
-                "summary": "Create a new financial advisor with role assignment",
                 "tags": [
                     "Admin"
                 ],
@@ -228,39 +310,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Erstellen des Beraters."
-                                        },
-                                        "error": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "string"
-                                                },
-                                                {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Ein unerwarteter Fehler ist aufgetreten."
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "201": {
                         "description": "",
                         "content": {
@@ -268,37 +317,45 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Berater wurde erfolgreich erstellt."
-                                        },
-                                        "advisor": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
-                                                "name": {
-                                                    "type": "string"
-                                                },
-                                                "email": {
-                                                    "type": "string"
-                                                },
-                                                "status": {
-                                                    "type": "string"
+                                                "advisor": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "email": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "name",
+                                                        "email",
+                                                        "status"
+                                                    ]
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "name",
-                                                "email",
-                                                "status"
+                                                "advisor"
                                             ]
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Berater wurde erfolgreich erstellt."
                                         }
                                     },
                                     "required": [
-                                        "message",
-                                        "advisor"
+                                        "data",
+                                        "message"
                                     ]
                                 }
                             }
@@ -319,7 +376,6 @@
         "/admin/advisors/{advisorId}": {
             "get": {
                 "operationId": "admin.getAdvisorDetails",
-                "summary": "Get detailed advisor information with analytics and monthly statistics",
                 "tags": [
                     "Admin"
                 ],
@@ -328,46 +384,12 @@
                         "name": "advisorId",
                         "in": "path",
                         "required": true,
-                        "description": "ID of advisor to get details for",
                         "schema": {
                             "type": "integer"
                         }
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Laden der Berater-Details."
-                                        },
-                                        "error": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "string"
-                                                },
-                                                {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Ein unerwarteter Fehler ist aufgetreten."
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "`AdvisorDetailResource`",
                         "content": {
@@ -393,7 +415,6 @@
             },
             "delete": {
                 "operationId": "admin.deleteAdvisor",
-                "summary": "Delete an advisor (only if no clients associated)",
                 "tags": [
                     "Admin"
                 ],
@@ -402,69 +423,12 @@
                         "name": "advisorId",
                         "in": "path",
                         "required": true,
-                        "description": "ID of advisor to delete",
                         "schema": {
                             "type": "integer"
                         }
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim L\u00f6schen des Beraters."
-                                        },
-                                        "error": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "string"
-                                                },
-                                                {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Ein unerwarteter Fehler ist aufgetreten."
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "const": "Advisor has clients"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -472,12 +436,24 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id"
+                                            ]
+                                        },
                                         "message": {
                                             "type": "string",
                                             "const": "Berater wurde erfolgreich gel\u00f6scht."
                                         }
                                     },
                                     "required": [
+                                        "data",
                                         "message"
                                     ]
                                 }
@@ -493,7 +469,6 @@
         "/admin/advisors/{advisorId}/status": {
             "patch": {
                 "operationId": "admin.updateAdvisorStatus",
-                "summary": "Update advisor status (active/blocked)",
                 "tags": [
                     "Admin"
                 ],
@@ -502,7 +477,6 @@
                         "name": "advisorId",
                         "in": "path",
                         "required": true,
-                        "description": "ID of advisor to update",
                         "schema": {
                             "type": "integer"
                         }
@@ -519,39 +493,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Aktualisieren des Berater-Status."
-                                        },
-                                        "error": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "string"
-                                                },
-                                                {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "Ein unerwarteter Fehler ist aufgetreten."
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -559,36 +500,44 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "advisor": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
-                                                "name": {
-                                                    "type": "string"
-                                                },
-                                                "email": {
-                                                    "type": "string"
-                                                },
-                                                "status": {
-                                                    "type": "string"
+                                                "advisor": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "email": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "name",
+                                                        "email",
+                                                        "status"
+                                                    ]
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "name",
-                                                "email",
-                                                "status"
+                                                "advisor"
                                             ]
+                                        },
+                                        "message": {
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "message",
-                                        "advisor"
+                                        "data",
+                                        "message"
                                     ]
                                 }
                             }
@@ -789,7 +738,6 @@
         "/clients": {
             "get": {
                 "operationId": "clients.index",
-                "summary": "Display a listing of clients based on user role",
                 "tags": [
                     "Client"
                 ],
@@ -933,6 +881,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -940,7 +891,6 @@
             },
             "post": {
                 "operationId": "clients.store",
-                "summary": "Store a newly created client",
                 "tags": [
                     "Client"
                 ],
@@ -955,30 +905,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Ein Fehler ist beim Anlegen des Mandanten aufgetreten"
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "const": "Interner Serverfehler"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "201": {
                         "description": "",
                         "content": {
@@ -986,7 +912,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "client": {
+                                        "data": {
                                             "$ref": "#/components/schemas/ClientResource"
                                         },
                                         "message": {
@@ -995,12 +921,15 @@
                                         }
                                     },
                                     "required": [
-                                        "client",
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1014,7 +943,6 @@
         "/clients/{client}": {
             "get": {
                 "operationId": "clients.show",
-                "summary": "Display the specified client",
                 "tags": [
                     "Client"
                 ],
@@ -1037,16 +965,23 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "client": {
+                                        "data": {
                                             "$ref": "#/components/schemas/ClientResource"
+                                        },
+                                        "message": {
+                                            "type": "null"
                                         }
                                     },
                                     "required": [
-                                        "client"
+                                        "data",
+                                        "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -1058,7 +993,6 @@
             },
             "put": {
                 "operationId": "clients.update",
-                "summary": "Update the specified client",
                 "tags": [
                     "Client"
                 ],
@@ -1084,30 +1018,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Ein Fehler ist beim Aktualisieren des Mandanten aufgetreten"
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "const": "Interner Serverfehler"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1115,7 +1025,7 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "client": {
+                                        "data": {
                                             "$ref": "#/components/schemas/ClientResource"
                                         },
                                         "message": {
@@ -1124,12 +1034,15 @@
                                         }
                                     },
                                     "required": [
-                                        "client",
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -1144,7 +1057,6 @@
             },
             "delete": {
                 "operationId": "clients.destroy",
-                "summary": "Remove the specified client (soft delete by marking as inactive)",
                 "tags": [
                     "Client"
                 ],
@@ -1160,30 +1072,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Ein Fehler ist beim Deaktivieren des Mandanten aufgetreten"
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "const": "Interner Serverfehler"
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "error"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1191,17 +1079,32 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id"
+                                            ]
+                                        },
                                         "message": {
                                             "type": "string",
                                             "const": "Mandant erfolgreich deaktiviert"
                                         }
                                     },
                                     "required": [
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
@@ -1306,34 +1209,10 @@
         "/admin/pension-settings": {
             "get": {
                 "operationId": "pensionSettings.index",
-                "summary": "Get all pension settings grouped by category",
                 "tags": [
                     "PensionSettings"
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut."
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1356,7 +1235,6 @@
         "/admin/pension-settings/{id}": {
             "put": {
                 "operationId": "pensionSettings.update",
-                "summary": "Update a specific pension setting",
                 "tags": [
                     "PensionSettings"
                 ],
@@ -1381,55 +1259,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut."
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    },
-                    "404": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Einstellung nicht gefunden."
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1439,6 +1268,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1452,7 +1284,6 @@
         "/admin/pension-settings/bulk-update": {
             "patch": {
                 "operationId": "pensionSettings.bulkUpdate",
-                "summary": "Bulk update multiple settings",
                 "tags": [
                     "PensionSettings"
                 ],
@@ -1467,32 +1298,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut."
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1502,6 +1307,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1515,37 +1323,10 @@
         "/admin/pension-settings/reset-defaults": {
             "post": {
                 "operationId": "pensionSettings.resetToDefaults",
-                "summary": "Reset settings to default values",
                 "tags": [
                     "PensionSettings"
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut."
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1556,6 +1337,9 @@
                             }
                         }
                     },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -1565,34 +1349,11 @@
         "/pension-parameters": {
             "get": {
                 "operationId": "pensionSettings.getParameters",
-                "summary": "Get current pension calculation parameters for frontend",
+                "summary": "Advisor-readable: chart components need tax brackets / insurance rates to render",
                 "tags": [
                     "PensionSettings"
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut."
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1612,7 +1373,6 @@
         "/clients/{clientId}/rentenchecks": {
             "get": {
                 "operationId": "rentencheck.index",
-                "summary": "Get all rentenchecks for a specific client",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -1627,25 +1387,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Laden der Rentenchecks"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1654,22 +1395,35 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Rentencheck"
-                                            }
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "client": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "data",
+                                                "client"
+                                            ]
                                         },
-                                        "client": {
-                                            "type": "string"
+                                        "message": {
+                                            "type": "null"
                                         }
                                     },
                                     "required": [
                                         "data",
-                                        "client"
+                                        "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1678,7 +1432,6 @@
             },
             "post": {
                 "operationId": "rentencheck.store",
-                "summary": "Create a new rentencheck for a client",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -1702,25 +1455,6 @@
                     }
                 },
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Erstellen des Rentenchecks"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "201": {
                         "description": "",
                         "content": {
@@ -1728,8 +1462,22 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "rentencheck": {
-                                            "$ref": "#/components/schemas/Rentencheck"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "rentencheck": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "rentencheck"
+                                            ]
                                         },
                                         "message": {
                                             "type": "string",
@@ -1737,12 +1485,15 @@
                                         }
                                     },
                                     "required": [
-                                        "rentencheck",
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1756,7 +1507,6 @@
         "/clients/{clientId}/rentenchecks/{rentencheckId}": {
             "get": {
                 "operationId": "rentencheck.show",
-                "summary": "Get a specific rentencheck with comprehensive contract data",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -1779,25 +1529,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Laden des Rentenchecks"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1805,68 +1536,83 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "rentencheck": {
-                                            "type": "string"
-                                        },
-                                        "contracts": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "payoutContracts": {
-                                                    "type": "array",
-                                                    "items": {}
+                                                "rentencheck": {
+                                                    "type": "string"
                                                 },
-                                                "pensionContracts": {
-                                                    "type": "array",
-                                                    "items": {}
+                                                "contracts": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "payoutContracts": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        },
+                                                        "pensionContracts": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        },
+                                                        "additionalIncome": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "payoutContracts",
+                                                        "pensionContracts",
+                                                        "additionalIncome"
+                                                    ]
                                                 },
-                                                "additionalIncome": {
-                                                    "type": "array",
-                                                    "items": {}
-                                                }
-                                            },
-                                            "required": [
-                                                "payoutContracts",
-                                                "pensionContracts",
-                                                "additionalIncome"
-                                            ]
-                                        },
-                                        "pension_totals": {
-                                            "type": "object",
-                                            "description": "Assume 10 years of additional income",
-                                            "properties": {
-                                                "payout_total": {
-                                                    "type": "number"
+                                                "pension_totals": {
+                                                    "type": "object",
+                                                    "description": "Assume 10 years of additional income",
+                                                    "properties": {
+                                                        "payout_total": {
+                                                            "type": "number"
+                                                        },
+                                                        "pension_monthly_total": {
+                                                            "type": "number"
+                                                        },
+                                                        "additional_income_annual": {
+                                                            "type": "number"
+                                                        },
+                                                        "total_estimated_value": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "payout_total",
+                                                        "pension_monthly_total",
+                                                        "additional_income_annual",
+                                                        "total_estimated_value"
+                                                    ]
                                                 },
-                                                "pension_monthly_total": {
-                                                    "type": "number"
-                                                },
-                                                "additional_income_annual": {
-                                                    "type": "number"
-                                                },
-                                                "total_estimated_value": {
+                                                "client": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "payout_total",
-                                                "pension_monthly_total",
-                                                "additional_income_annual",
-                                                "total_estimated_value"
+                                                "rentencheck",
+                                                "contracts",
+                                                "pension_totals",
+                                                "client"
                                             ]
                                         },
-                                        "client": {
-                                            "type": "string"
+                                        "message": {
+                                            "type": "null"
                                         }
                                     },
                                     "required": [
-                                        "rentencheck",
-                                        "contracts",
-                                        "pension_totals",
-                                        "client"
+                                        "data",
+                                        "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1875,7 +1621,6 @@
             },
             "delete": {
                 "operationId": "rentencheck.destroy",
-                "summary": "Delete a rentencheck",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -1898,25 +1643,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim L\u00f6schen des Rentenchecks"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1924,17 +1650,32 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id"
+                                            ]
+                                        },
                                         "message": {
                                             "type": "string",
                                             "const": "Rentencheck erfolgreich gel\u00f6scht"
                                         }
                                     },
                                     "required": [
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1945,7 +1686,6 @@
         "/clients/{clientId}/rentenchecks/{rentencheckId}/calculation": {
             "get": {
                 "operationId": "rentencheck.getPensionCalculation",
-                "summary": "Get calculated pension data for visualization using dynamic admin parameters",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -1968,25 +1708,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler bei der Rentenberechnung"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -1994,260 +1715,270 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "pension_data": {
+                                        "data": {
                                             "type": "object",
                                             "properties": {
-                                                "currentAge": {
-                                                    "type": "integer"
-                                                },
-                                                "inflationRate": {
-                                                    "type": "number"
-                                                },
-                                                "retirementAge": {
-                                                    "type": "integer"
-                                                },
-                                                "lifeExpectancy": {
-                                                    "type": "integer",
-                                                    "const": 85
-                                                },
-                                                "desiredPensionToday": {
-                                                    "type": "number"
-                                                },
-                                                "desiredPensionRetirement": {
-                                                    "type": "number"
-                                                },
-                                                "desiredPensionLifeExpectancy": {
-                                                    "type": "number"
-                                                },
-                                                "legalPensionToday": {
-                                                    "type": "number"
-                                                },
-                                                "legalPensionRetirement": {
-                                                    "type": "number"
-                                                },
-                                                "statutoryPensionGross": {
-                                                    "type": "number"
-                                                },
-                                                "statutoryPensionAfterInsurance": {
-                                                    "type": "number"
-                                                },
-                                                "statutoryPensionPurchasingPower": {
-                                                    "type": "number"
-                                                },
-                                                "privatePensionToday": {
-                                                    "type": "number"
-                                                },
-                                                "privatePensionRetirement": {
-                                                    "type": "number"
-                                                },
-                                                "bavRiesterToday": {
-                                                    "type": "number"
-                                                },
-                                                "bavRiesterRetirement": {
-                                                    "type": "number"
-                                                },
-                                                "parameters_used": {
+                                                "pension_data": {
                                                     "type": "object",
                                                     "properties": {
-                                                        "economic_assumptions": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "inflation_rate": {
-                                                                    "type": "number"
-                                                                },
-                                                                "pension_increase_rate": {
-                                                                    "type": "number"
-                                                                },
-                                                                "investment_return_rate": {
-                                                                    "type": "number"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "inflation_rate",
-                                                                "pension_increase_rate",
-                                                                "investment_return_rate"
-                                                            ]
+                                                        "currentAge": {
+                                                            "type": "integer"
                                                         },
-                                                        "social_insurance": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "health_insurance_rate": {
-                                                                    "type": "number"
-                                                                },
-                                                                "additional_health_insurance_rate": {
-                                                                    "type": "number"
-                                                                },
-                                                                "care_insurance_rate": {
-                                                                    "type": "number"
-                                                                },
-                                                                "total_insurance_rate": {
-                                                                    "type": "string"
-                                                                },
-                                                                "health_insurance_exemption_bav": {
-                                                                    "type": "number"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "health_insurance_rate",
-                                                                "additional_health_insurance_rate",
-                                                                "care_insurance_rate",
-                                                                "total_insurance_rate",
-                                                                "health_insurance_exemption_bav"
-                                                            ]
+                                                        "inflationRate": {
+                                                            "type": "number"
                                                         },
-                                                        "tax_system": {
+                                                        "retirementAge": {
+                                                            "type": "integer"
+                                                        },
+                                                        "lifeExpectancy": {
+                                                            "type": "integer",
+                                                            "const": 85
+                                                        },
+                                                        "desiredPensionToday": {
+                                                            "type": "number"
+                                                        },
+                                                        "desiredPensionRetirement": {
+                                                            "type": "number"
+                                                        },
+                                                        "desiredPensionLifeExpectancy": {
+                                                            "type": "number"
+                                                        },
+                                                        "legalPensionToday": {
+                                                            "type": "number"
+                                                        },
+                                                        "legalPensionRetirement": {
+                                                            "type": "number"
+                                                        },
+                                                        "statutoryPensionGross": {
+                                                            "type": "number"
+                                                        },
+                                                        "statutoryPensionAfterInsurance": {
+                                                            "type": "number"
+                                                        },
+                                                        "statutoryPensionPurchasingPower": {
+                                                            "type": "number"
+                                                        },
+                                                        "privatePensionToday": {
+                                                            "type": "number"
+                                                        },
+                                                        "privatePensionRetirement": {
+                                                            "type": "number"
+                                                        },
+                                                        "bavRiesterToday": {
+                                                            "type": "number"
+                                                        },
+                                                        "bavRiesterRetirement": {
+                                                            "type": "number"
+                                                        },
+                                                        "parameters_used": {
                                                             "type": "object",
                                                             "properties": {
-                                                                "rates": {
+                                                                "economic_assumptions": {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "stufe_1": {
+                                                                        "inflation_rate": {
                                                                             "type": "number"
                                                                         },
-                                                                        "stufe_2": {
+                                                                        "pension_increase_rate": {
                                                                             "type": "number"
                                                                         },
-                                                                        "stufe_3": {
-                                                                            "type": "number"
-                                                                        },
-                                                                        "stufe_4": {
-                                                                            "type": "number"
-                                                                        },
-                                                                        "stufe_5": {
+                                                                        "investment_return_rate": {
                                                                             "type": "number"
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "stufe_1",
-                                                                        "stufe_2",
-                                                                        "stufe_3",
-                                                                        "stufe_4",
-                                                                        "stufe_5"
+                                                                        "inflation_rate",
+                                                                        "pension_increase_rate",
+                                                                        "investment_return_rate"
                                                                     ]
                                                                 },
-                                                                "thresholds": {
+                                                                "social_insurance": {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "threshold_1": {
+                                                                        "health_insurance_rate": {
                                                                             "type": "number"
                                                                         },
-                                                                        "threshold_2": {
+                                                                        "additional_health_insurance_rate": {
                                                                             "type": "number"
                                                                         },
-                                                                        "threshold_3": {
+                                                                        "care_insurance_rate": {
                                                                             "type": "number"
                                                                         },
-                                                                        "threshold_4": {
+                                                                        "total_insurance_rate": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "health_insurance_exemption_bav": {
                                                                             "type": "number"
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "threshold_1",
-                                                                        "threshold_2",
-                                                                        "threshold_3",
-                                                                        "threshold_4"
+                                                                        "health_insurance_rate",
+                                                                        "additional_health_insurance_rate",
+                                                                        "care_insurance_rate",
+                                                                        "total_insurance_rate",
+                                                                        "health_insurance_exemption_bav"
                                                                     ]
                                                                 },
-                                                                "solidarity_surcharge_rate": {
-                                                                    "type": "number"
+                                                                "tax_system": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "rates": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "stufe_1": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "stufe_2": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "stufe_3": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "stufe_4": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "stufe_5": {
+                                                                                    "type": "number"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "stufe_1",
+                                                                                "stufe_2",
+                                                                                "stufe_3",
+                                                                                "stufe_4",
+                                                                                "stufe_5"
+                                                                            ]
+                                                                        },
+                                                                        "thresholds": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "threshold_1": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "threshold_2": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "threshold_3": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "threshold_4": {
+                                                                                    "type": "number"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "threshold_1",
+                                                                                "threshold_2",
+                                                                                "threshold_3",
+                                                                                "threshold_4"
+                                                                            ]
+                                                                        },
+                                                                        "solidarity_surcharge_rate": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "solidarity_surcharge_threshold": {
+                                                                            "type": "number"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "rates",
+                                                                        "thresholds",
+                                                                        "solidarity_surcharge_rate",
+                                                                        "solidarity_surcharge_threshold"
+                                                                    ]
                                                                 },
-                                                                "solidarity_surcharge_threshold": {
-                                                                    "type": "number"
+                                                                "regional_taxes": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "church_tax_bavaria_bw": {
+                                                                            "type": "number"
+                                                                        },
+                                                                        "church_tax_other_states": {
+                                                                            "type": "number"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "church_tax_bavaria_bw",
+                                                                        "church_tax_other_states"
+                                                                    ]
+                                                                },
+                                                                "demographics": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "retirement_age": {
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "life_expectancy": {
+                                                                            "type": "integer"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "retirement_age",
+                                                                        "life_expectancy"
+                                                                    ]
                                                                 }
                                                             },
                                                             "required": [
-                                                                "rates",
-                                                                "thresholds",
-                                                                "solidarity_surcharge_rate",
-                                                                "solidarity_surcharge_threshold"
-                                                            ]
-                                                        },
-                                                        "regional_taxes": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "church_tax_bavaria_bw": {
-                                                                    "type": "number"
-                                                                },
-                                                                "church_tax_other_states": {
-                                                                    "type": "number"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "church_tax_bavaria_bw",
-                                                                "church_tax_other_states"
-                                                            ]
-                                                        },
-                                                        "demographics": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "retirement_age": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "life_expectancy": {
-                                                                    "type": "integer"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "retirement_age",
-                                                                "life_expectancy"
+                                                                "economic_assumptions",
+                                                                "social_insurance",
+                                                                "tax_system",
+                                                                "regional_taxes",
+                                                                "demographics"
                                                             ]
                                                         }
                                                     },
                                                     "required": [
-                                                        "economic_assumptions",
-                                                        "social_insurance",
-                                                        "tax_system",
-                                                        "regional_taxes",
-                                                        "demographics"
+                                                        "currentAge",
+                                                        "inflationRate",
+                                                        "retirementAge",
+                                                        "lifeExpectancy",
+                                                        "desiredPensionToday",
+                                                        "desiredPensionRetirement",
+                                                        "desiredPensionLifeExpectancy",
+                                                        "legalPensionToday",
+                                                        "legalPensionRetirement",
+                                                        "statutoryPensionGross",
+                                                        "statutoryPensionAfterInsurance",
+                                                        "statutoryPensionPurchasingPower",
+                                                        "privatePensionToday",
+                                                        "privatePensionRetirement",
+                                                        "bavRiesterToday",
+                                                        "bavRiesterRetirement",
+                                                        "parameters_used"
                                                     ]
-                                                }
-                                            },
-                                            "required": [
-                                                "currentAge",
-                                                "inflationRate",
-                                                "retirementAge",
-                                                "lifeExpectancy",
-                                                "desiredPensionToday",
-                                                "desiredPensionRetirement",
-                                                "desiredPensionLifeExpectancy",
-                                                "legalPensionToday",
-                                                "legalPensionRetirement",
-                                                "statutoryPensionGross",
-                                                "statutoryPensionAfterInsurance",
-                                                "statutoryPensionPurchasingPower",
-                                                "privatePensionToday",
-                                                "privatePensionRetirement",
-                                                "bavRiesterToday",
-                                                "bavRiesterRetirement",
-                                                "parameters_used"
-                                            ]
-                                        },
-                                        "pension_totals": {
-                                            "type": "object",
-                                            "description": "Assume 10 years of additional income",
-                                            "properties": {
-                                                "payout_total": {
-                                                    "type": "number"
                                                 },
-                                                "pension_monthly_total": {
-                                                    "type": "number"
+                                                "pension_totals": {
+                                                    "type": "object",
+                                                    "description": "Assume 10 years of additional income",
+                                                    "properties": {
+                                                        "payout_total": {
+                                                            "type": "number"
+                                                        },
+                                                        "pension_monthly_total": {
+                                                            "type": "number"
+                                                        },
+                                                        "additional_income_annual": {
+                                                            "type": "number"
+                                                        },
+                                                        "total_estimated_value": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "payout_total",
+                                                        "pension_monthly_total",
+                                                        "additional_income_annual",
+                                                        "total_estimated_value"
+                                                    ]
                                                 },
-                                                "additional_income_annual": {
-                                                    "type": "number"
-                                                },
-                                                "total_estimated_value": {
+                                                "client": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "payout_total",
-                                                "pension_monthly_total",
-                                                "additional_income_annual",
-                                                "total_estimated_value"
+                                                "pension_data",
+                                                "pension_totals",
+                                                "client"
                                             ]
-                                        },
-                                        "client": {
-                                            "type": "string"
                                         },
                                         "message": {
                                             "type": "string",
@@ -2255,14 +1986,15 @@
                                         }
                                     },
                                     "required": [
-                                        "pension_data",
-                                        "pension_totals",
-                                        "client",
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -2273,7 +2005,6 @@
         "/clients/{clientId}/rentenchecks/{rentencheckId}/step/{step}": {
             "put": {
                 "operationId": "rentencheck.updateStep",
-                "summary": "Update step data for a rentencheck with comprehensive contract handling",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -2304,58 +2035,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "anyOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "const": "Fehler beim Speichern des Schritts"
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        },
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "required": [
-                                                "message"
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -2365,40 +2044,68 @@
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "rentencheck": {
-                                                    "$ref": "#/components/schemas/Rentencheck"
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rentencheck": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0,
+                                                            "additionalItems": false
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "rentencheck"
+                                                    ]
                                                 },
                                                 "message": {
                                                     "type": "string"
                                                 }
                                             },
                                             "required": [
-                                                "rentencheck",
+                                                "data",
                                                 "message"
                                             ]
                                         },
                                         {
                                             "type": "object",
                                             "properties": {
-                                                "rentencheck": {
-                                                    "$ref": "#/components/schemas/Rentencheck"
-                                                },
-                                                "contracts_created": {
-                                                    "type": "integer"
+                                                "data": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "rentencheck": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0,
+                                                            "additionalItems": false
+                                                        },
+                                                        "contracts_created": {
+                                                            "type": "integer"
+                                                        },
+                                                        "contract_warnings": {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "rentencheck",
+                                                        "contracts_created",
+                                                        "contract_warnings"
+                                                    ]
                                                 },
                                                 "message": {
                                                     "type": "string"
-                                                },
-                                                "contract_warnings": {
-                                                    "type": "array",
-                                                    "items": {}
                                                 }
                                             },
                                             "required": [
-                                                "rentencheck",
-                                                "contracts_created",
-                                                "message",
-                                                "contract_warnings"
+                                                "data",
+                                                "message"
                                             ]
                                         }
                                     ]
@@ -2406,11 +2113,14 @@
                             }
                         }
                     },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -2418,7 +2128,6 @@
         "/clients/{clientId}/rentenchecks/{rentencheckId}/step/{step}/complete": {
             "put": {
                 "operationId": "rentencheck.markStepCompleted",
-                "summary": "Manually mark a step as completed",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -2449,43 +2158,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Markieren des Schritts"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -2493,20 +2165,37 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "rentencheck": {
-                                            "$ref": "#/components/schemas/Rentencheck"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "rentencheck": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "rentencheck"
+                                            ]
                                         },
                                         "message": {
                                             "type": "string"
                                         }
                                     },
                                     "required": [
-                                        "rentencheck",
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -2517,7 +2206,6 @@
         "/clients/{clientId}/rentenchecks/{rentencheckId}/complete": {
             "put": {
                 "operationId": "rentencheck.complete",
-                "summary": "Complete a rentencheck",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -2540,43 +2228,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Abschlie\u00dfen des Rentenchecks"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -2584,18 +2235,26 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "rentencheck": {
-                                            "anyOf": [
-                                                {
-                                                    "$ref": "#/components/schemas/Rentencheck"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "rentencheck": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
                                                 },
-                                                {
-                                                    "type": "null"
+                                                "pdf_file": {
+                                                    "$ref": "#/components/schemas/File"
                                                 }
+                                            },
+                                            "required": [
+                                                "rentencheck",
+                                                "pdf_file"
                                             ]
-                                        },
-                                        "pdf_file": {
-                                            "$ref": "#/components/schemas/File"
                                         },
                                         "message": {
                                             "type": "string",
@@ -2603,13 +2262,15 @@
                                         }
                                     },
                                     "required": [
-                                        "rentencheck",
-                                        "pdf_file",
+                                        "data",
                                         "message"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -2620,7 +2281,6 @@
         "/clients/{clientId}/rentenchecks/{rentencheckId}/pdf": {
             "get": {
                 "operationId": "rentencheck.downloadPdf",
-                "summary": "Generate and download PDF for a rentencheck",
                 "tags": [
                     "Rentencheck"
                 ],
@@ -2643,25 +2303,6 @@
                     }
                 ],
                 "responses": {
-                    "500": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Fehler beim Erstellen des PDFs"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
                     "200": {
                         "description": "",
                         "content": {
@@ -2671,6 +2312,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -2744,6 +2388,79 @@
                     "recent_clients"
                 ],
                 "title": "AdvisorDetailResource"
+            },
+            "AdvisorResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "first_name": {
+                        "type": "string"
+                    },
+                    "last_name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "company": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "last_login": {
+                        "type": "string"
+                    },
+                    "statistics": {
+                        "type": "object",
+                        "description": "Placeholder - track separately if needed",
+                        "properties": {
+                            "total_clients": {
+                                "type": "string"
+                            },
+                            "total_rentenchecks": {
+                                "type": "string"
+                            },
+                            "completed_rentenchecks": {
+                                "type": "string"
+                            },
+                            "completion_rate": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "total_clients",
+                            "total_rentenchecks",
+                            "completed_rentenchecks",
+                            "completion_rate"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "phone",
+                    "company",
+                    "status",
+                    "created_at",
+                    "last_login",
+                    "statistics"
+                ],
+                "title": "AdvisorResource"
             },
             "BulkUpdatePensionSettingsRequest": {
                 "type": "object",
@@ -3047,16 +2764,6 @@
                     "accept_privacy"
                 ],
                 "title": "RegisterRequest"
-            },
-            "Rentencheck": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
-                "title": "Rentencheck"
             },
             "StoreClientRequest": {
                 "type": "object",

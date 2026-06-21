@@ -12,20 +12,19 @@ use App\Http\Resources\PensionParametersResource;
 use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
 use App\Services\PensionSettingsManagementService;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Pension Settings API Controller
+ * Pension Settings API Controller.
  *
- * Thin controller focused on HTTP concerns only.
- * Business logic delegated to PensionSettingsManagementService.
- * Authorization handled via Policy classes.
- * Consistent error handling and German validation messages.
+ * Thin: business logic in PensionSettingsManagementService and PensionCalculator,
+ * authorization via PensionSettingPolicy, errors via global exception renderer.
+ *
+ * NOTE: this controller keeps the legacy `{success: true, data: ...}` envelope
+ * for now (the existing admin UI depends on it). Phase 7 (frontend foundations)
+ * consolidates response envelopes across the API.
  */
 final class PensionSettingsController extends Controller
 {
@@ -34,175 +33,93 @@ final class PensionSettingsController extends Controller
         private readonly PensionSettingsManagementService $managementService,
     ) {}
 
-    /**
-     * Get all pension settings grouped by category
-     */
     public function index(): JsonResponse
     {
         Gate::authorize('viewAny', PensionSetting::class);
 
-        try {
-            $settings = $this->managementService->getFormattedSettingsWithResources();
-            $parameters = $this->pensionCalculator->parameters();
-
-            return $this->successResponse([
-                'data' => $settings,
-                'current_parameters' => new PensionParametersResource($parameters),
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Failed to load pension settings');
-        }
+        return $this->envelope([
+            'data' => $this->managementService->getFormattedSettingsWithResources(),
+            'current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters()),
+        ]);
     }
 
     /**
-     * Get current pension calculation parameters for frontend.
-     *
-     * Advisor-readable: chart components need tax brackets / insurance rates
-     * to render correctly. Modification still requires admin (see update / bulkUpdate).
+     * Advisor-readable: chart components need tax brackets / insurance rates to render.
      */
     public function getParameters(): JsonResponse
     {
-        try {
-            $parameters = $this->pensionCalculator->parameters();
-
-            return $this->successResponse([
-                'data' => new PensionParametersResource($parameters),
-            ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Failed to load pension parameters');
-        }
+        return $this->envelope([
+            'data' => new PensionParametersResource($this->pensionCalculator->parameters()),
+        ]);
     }
 
-    /**
-     * Update a specific pension setting
-     */
     public function update(UpdatePensionSettingRequest $request, int $id): JsonResponse
     {
-        try {
-            $setting = PensionSetting::findOrFail($id);
+        $setting = PensionSetting::findOrFail($id);
+        Gate::authorize('update', $setting);
 
-            Gate::authorize('update', $setting);
+        $setting->update([
+            'value' => $request->validated('value'),
+            'description' => $request->validated('description', $setting->description),
+            'description_de' => $request->validated('description_de', $setting->description_de),
+        ]);
 
-            DB::transaction(function () use ($setting, $request) {
-                $setting->update([
-                    'value' => $request->validated('value'),
-                    'description' => $request->validated('description', $setting->description),
-                    'description_de' => $request->validated('description_de', $setting->description_de),
-                ]);
-            });
+        Log::info('Pension setting updated', [
+            'setting_id' => $setting->id,
+            'setting_key' => $setting->key,
+            'new_value' => $setting->value,
+            'user_id' => $request->user()?->id,
+        ]);
 
-            Log::info('Pension setting updated', [
-                'setting_id' => $setting->id,
-                'setting_key' => $setting->key,
-                'new_value' => $setting->value,
-                'user_id' => $request->user()?->id,
-            ]);
-
-            return $this->successResponse([
-                'data' => new PensionSettingResource($setting),
-            ], 'Einstellung erfolgreich aktualisiert.');
-
-        } catch (ModelNotFoundException $e) {
-            return $this->errorResponse('Einstellung nicht gefunden.', 404);
-        } catch (AuthorizationException $e) {
-            return $this->errorResponse($e->getMessage(), 403);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Failed to update pension setting', $id);
-        }
+        return $this->envelope(
+            ['data' => new PensionSettingResource($setting)],
+            'Einstellung erfolgreich aktualisiert.',
+        );
     }
 
-    /**
-     * Bulk update multiple settings
-     */
     public function bulkUpdate(BulkUpdatePensionSettingsRequest $request): JsonResponse
     {
         Gate::authorize('bulkUpdate', PensionSetting::class);
 
-        try {
-            $updatedSettings = $this->managementService->bulkUpdateSettings(
-                $request->validated('settings'),
-                $request->user()->id,
-            );
+        $updated = $this->managementService->bulkUpdateSettings(
+            $request->validated('settings'),
+            $request->user()->id,
+        );
 
-            $parameters = $this->pensionCalculator->parameters();
-
-            return $this->successResponse([
-                'data' => PensionSettingResource::collection($updatedSettings),
-                'current_parameters' => new PensionParametersResource($parameters),
-            ], $updatedSettings->count() . ' Einstellungen erfolgreich aktualisiert.');
-
-        } catch (AuthorizationException $e) {
-            return $this->errorResponse($e->getMessage(), 403);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Failed to bulk update pension settings');
-        }
+        return $this->envelope(
+            [
+                'data' => PensionSettingResource::collection($updated),
+                'current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters()),
+            ],
+            $updated->count() . ' Einstellungen erfolgreich aktualisiert.',
+        );
     }
 
-    /**
-     * Reset settings to default values
-     */
     public function resetToDefaults(): JsonResponse
     {
         Gate::authorize('resetToDefaults', PensionSetting::class);
 
-        try {
-            $updatedCount = $this->managementService->resetToDefaults(request()->user()->id);
-            $parameters = $this->pensionCalculator->parameters();
+        $updatedCount = $this->managementService->resetToDefaults(request()->user()->id);
 
-            return $this->successResponse([
-                'current_parameters' => new PensionParametersResource($parameters),
-            ], "{$updatedCount} Einstellungen auf Standardwerte zurückgesetzt.");
-
-        } catch (AuthorizationException $e) {
-            return $this->errorResponse($e->getMessage(), 403);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Failed to reset pension settings');
-        }
-    }
-
-    /**
-     * Consistent success response format
-     */
-    private function successResponse(array $data, ?string $message = null): JsonResponse
-    {
-        $response = ['success' => true] + $data;
-
-        if ($message) {
-            $response['message'] = $message;
-        }
-
-        return response()->json($response);
-    }
-
-    /**
-     * Consistent error response format
-     */
-    private function errorResponse(string $message, int $statusCode = 500): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-        ], $statusCode);
-    }
-
-    /**
-     * Handle exceptions with logging and user-friendly error messages
-     */
-    private function handleException(\Exception $e, string $logMessage, ?int $contextId = null): JsonResponse
-    {
-        $context = [
-            'error' => $e->getMessage(),
-            'user_id' => request()->user()?->id,
-        ];
-
-        if ($contextId) {
-            $context['setting_id'] = $contextId;
-        }
-
-        Log::error($logMessage, $context);
-
-        return $this->errorResponse(
-            'Fehler beim Verarbeiten der Anfrage. Bitte versuchen Sie es erneut.',
+        return $this->envelope(
+            ['current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters())],
+            "{$updatedCount} Einstellungen auf Standardwerte zurückgesetzt.",
         );
+    }
+
+    /**
+     * Legacy success envelope. Kept here (not in BaseApiController) because
+     * other controllers have already moved to the modern `{data: ...}` shape.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function envelope(array $payload, ?string $message = null): JsonResponse
+    {
+        $body = ['success' => true] + $payload;
+        if ($message !== null) {
+            $body['message'] = $message;
+        }
+
+        return response()->json($body);
     }
 }
