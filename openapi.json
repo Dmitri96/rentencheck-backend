@@ -1566,7 +1566,6 @@
                                                 },
                                                 "pension_totals": {
                                                     "type": "object",
-                                                    "description": "Assume 10 years of additional income",
                                                     "properties": {
                                                         "payout_total": {
                                                             "type": "number"
@@ -1948,7 +1947,6 @@
                                                 },
                                                 "pension_totals": {
                                                     "type": "object",
-                                                    "description": "Assume 10 years of additional income",
                                                     "properties": {
                                                         "payout_total": {
                                                             "type": "number"
