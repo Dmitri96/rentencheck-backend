@@ -47,11 +47,11 @@ final class AuthController extends Controller
     }
 
     /**
-     * Logout user (revoke token)
+     * Logout user: invalidate SPA session + revoke bearer token if present.
      */
     public function logout(Request $request): JsonResponse
     {
-        $result = $this->authService->logout($request->user());
+        $result = $this->authService->logout($request->user(), $request);
 
         return response()->json($result);
     }

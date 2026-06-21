@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Sanctum SPA: requests from sanctum.stateful domains receive
+        // session-cookie auth (CSRF protected). Bearer tokens still work
+        // for non-stateful origins (third-party API consumers).
+        $middleware->statefulApi();
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);

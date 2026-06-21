@@ -7,10 +7,12 @@ namespace App\Services;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\NewAccessToken;
+use Laravel\Sanctum\PersonalAccessToken;
 
 final class AuthService
 {
@@ -46,6 +48,9 @@ final class AuthService
             // Assign financial advisor role by default
             $user->assignRole(User::ROLE_ADVISOR);
 
+            // Sanctum SPA session auth (primary) + bearer token (legacy/transition).
+            // Phase 7 deletes the legacy frontend axios client and the token field.
+            Auth::guard('web')->login($user);
             $token = $this->createToken($user);
 
             DB::commit();
@@ -73,30 +78,32 @@ final class AuthService
     {
         $remember = $credentials['remember_me'] ?? false;
 
-        // Remove remember_me from credentials for Auth::attempt
         $loginCredentials = [
             'email' => $credentials['email'],
             'password' => $credentials['password'],
         ];
 
-        if (! Auth::attempt($loginCredentials, $remember)) {
+        // Auth::guard('web')->attempt sets the session cookie when credentials
+        // are valid — this drives the Sanctum SPA stateful path for the frontend.
+        if (! Auth::guard('web')->attempt($loginCredentials, $remember)) {
             throw new AuthenticationException('Ungültige Anmeldedaten.');
         }
 
-        $user = Auth::user();
+        $user = Auth::guard('web')->user();
 
-        // Check if user is blocked
         if ($user->isBlocked()) {
-            Auth::logout();
+            $this->revokeSession();
             throw new AuthenticationException('Ihr Account wurde gesperrt. Bitte kontaktieren Sie den Administrator.');
         }
 
-        // Check if user is active
         if (! $user->isActive()) {
-            Auth::logout();
+            $this->revokeSession();
             throw new AuthenticationException('Ihr Account ist nicht aktiv.');
         }
 
+        // Issue a bearer token alongside the session for legacy clients
+        // (current axios client still sends Authorization headers). Phase 7
+        // deletes axios.ts and we can drop this.
         $token = $this->createToken($user);
 
         return [
@@ -107,17 +114,39 @@ final class AuthService
     }
 
     /**
-     * Revoke the user's current access token.
+     * Invalidate both the SPA session and the current bearer token.
      *
      * @return array{message: string}
      */
-    public function logout(User $user): array
+    public function logout(User $user, ?Request $request = null): array
     {
-        $user->currentAccessToken()->delete();
+        // Drop the current bearer token if the request came in with one.
+        // currentAccessToken() returns a TransientToken on session auth
+        // (no delete()) and a PersonalAccessToken on bearer auth.
+        $current = $user->currentAccessToken();
+        if ($current instanceof PersonalAccessToken) {
+            $current->delete();
+        }
+
+        $this->revokeSession($request);
 
         return [
             'message' => 'Erfolgreich abgemeldet',
         ];
+    }
+
+    /**
+     * End the SPA web session and rotate the CSRF token.
+     */
+    private function revokeSession(?Request $request = null): void
+    {
+        Auth::guard('web')->logout();
+
+        $request = $request ?? request();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
     }
 
     /**
