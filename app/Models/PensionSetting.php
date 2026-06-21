@@ -7,6 +7,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
  * Pension Setting Model
@@ -30,6 +32,7 @@ use Illuminate\Support\Carbon;
 class PensionSetting extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $fillable = [
         'key',
@@ -49,4 +52,18 @@ class PensionSetting extends Model
         'valid_from' => 'date',
         'valid_until' => 'date',
     ];
+
+    /**
+     * Audit log: pension settings affect every advisor's pension calculation,
+     * so we record every change with old + new values. Stored in the
+     * activity_log table (spatie/laravel-activitylog).
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['key', 'category', 'value', 'is_active', 'valid_from', 'valid_until'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('pension_settings');
+    }
 }
