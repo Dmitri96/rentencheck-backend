@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Rentenchecks\RentencheckStepValidator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -193,72 +194,22 @@ class Rentencheck extends Model
     }
 
     /**
-     * Update step data and mark as completed if valid
+     * Update step data and mark as completed if valid.
+     *
+     * The "valid enough to auto-complete" rules live in
+     * App\Services\Rentenchecks\RentencheckStepValidator so the model can stay an
+     * Eloquent model and the rules are unit-testable in isolation.
      */
     public function updateStepData(int $step, array $data): void
     {
         $stepField = "step_{$step}_data";
         $this->$stepField = $data;
 
-        // Auto-complete step if data seems valid
-        if ($this->isStepDataValid($step, $data)) {
+        if (app(RentencheckStepValidator::class)->isComplete($step, $data)) {
             $this->completeStep($step);
         }
 
         $this->save();
-    }
-
-    /**
-     * Basic validation for step completion
-     */
-    private function isStepDataValid(int $step, array $data): bool
-    {
-        if (empty($data)) {
-            return false;
-        }
-
-        switch ($step) {
-            case 1:
-                // Step 1: Personal and Financial Information
-                return ! empty($data['profession'])
-                    && ! empty($data['maritalStatus'])
-                    && isset($data['currentGrossIncome'])
-                    && isset($data['currentNetIncome']);
-
-            case 2:
-                // Step 2: Expectations
-                return isset($data['currentAge'])
-                    && isset($data['retirementAge'])
-                    && isset($data['pensionWishCurrentValue']);
-
-            case 3:
-                // Step 3: Contract Overview - At least one boolean field must be set
-                return isset($data['statutoryPensionClaims'])
-                    || isset($data['professionalProvisionWorks'])
-                    || isset($data['publicServiceAdditionalProvision'])
-                    || isset($data['civilServiceProvision']);
-
-            case 4:
-                // Step 4: Important Aspects - Check if aspectRatings object has values
-                if (! isset($data['aspectRatings']) || ! is_array($data['aspectRatings'])) {
-                    return false;
-                }
-
-                // Check if at least some aspect ratings are filled
-                $aspectRatings = $data['aspectRatings'];
-                $filledRatings = array_filter($aspectRatings, function ($value) {
-                    return ! empty($value) && $value !== '';
-                });
-
-                return count($filledRatings) >= 3; // At least 3 aspects rated
-
-            case 5:
-                // Step 5: Conclusion
-                return ! empty($data['date']) && ! empty($data['location']);
-
-            default:
-                return false;
-        }
     }
 
     /**
