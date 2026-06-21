@@ -12,13 +12,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * RentencheckContract Model
  *
- * Handles comprehensive contract data for pension analysis including:
- * - Payout contracts with maturity details
- * - Pension contracts with monthly amounts
- * - Additional income with frequency settings
+ * Handles comprehensive contract data for pension analysis.
  *
- * This model follows clean architecture principles with proper
- * data casting and business logic separation.
+ * @property int $id
+ * @property int $rentencheck_id
+ * @property string $category one of CATEGORY_PAYOUT / CATEGORY_PENSION / CATEGORY_ADDITIONAL_INCOME
+ * @property string|null $contract
+ * @property string|null $company
+ * @property string|null $contract_type
+ * @property float|null $interest_rate
+ * @property int|null $maturity_year
+ * @property int|null $pension_start_year
+ * @property float|null $guaranteed_amount
+ * @property float|null $projected_amount
+ * @property float|null $monthly_amount
+ * @property int|null $start_year
+ * @property string|null $frequency
+ * @property string|null $description
+ * @property string|null $type
+ * @property int $sort_order
+ * @property-read float $annual_amount
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> ordered()
  */
 final class RentencheckContract extends Model
 {
