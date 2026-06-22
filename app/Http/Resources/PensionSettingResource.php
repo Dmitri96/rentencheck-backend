@@ -20,20 +20,32 @@ class PensionSettingResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array{
+     *   id: int,
+     *   key: string,
+     *   value: float,
+     *   unit: string|null,
+     *   description: string|null,
+     *   description_de: string|null,
+     *   formatted_value: string,
+     *   category: string,
+     *   is_active: bool,
+     *   valid_from: string|null,
+     *   valid_until: string|null,
+     * }
      */
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'key' => $this->key,
+            'id' => (int) $this->id,
+            'key' => (string) $this->key,
             'value' => (float) $this->value,
-            'unit' => $this->unit,
-            'description' => $this->description,
-            'description_de' => $this->description_de,
+            'unit' => $this->unit !== null ? (string) $this->unit : null,
+            'description' => $this->description !== null ? (string) $this->description : null,
+            'description_de' => $this->description_de !== null ? (string) $this->description_de : null,
             'formatted_value' => $this->getFormattedValueAttribute(),
-            'category' => $this->category,
-            'is_active' => $this->is_active,
+            'category' => (string) $this->category,
+            'is_active' => (bool) $this->is_active,
             'valid_from' => $this->valid_from?->format('Y-m-d'),
             'valid_until' => $this->valid_until?->format('Y-m-d'),
         ];

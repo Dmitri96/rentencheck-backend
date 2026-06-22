@@ -12,7 +12,18 @@ final class DashboardOverviewResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array{
+     *   overview: array{
+     *     total_advisors: int,
+     *     active_advisors: int,
+     *     blocked_advisors: int,
+     *     total_clients: int,
+     *     total_rentenchecks: int,
+     *     completed_rentenchecks: int,
+     *     completion_rate: float,
+     *   },
+     *   recent_activity: array<int, array{id: int, client_name: string, advisor_name: string, is_completed: bool, created_at: string}>,
+     * }
      */
     public function toArray(Request $request): array
     {

@@ -89,7 +89,7 @@ final class AdminController extends BaseApiController
     public function getAdvisorDetails(int $advisorId, GetAdvisorDetailsAction $action): JsonResponse
     {
         return $this->successResponse(
-            (new AdvisorDetailResource($action->execute($advisorId)))->resolve(),
+            new AdvisorDetailResource($action->execute($advisorId)),
         );
     }
 }
