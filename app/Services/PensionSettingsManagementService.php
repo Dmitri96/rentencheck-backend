@@ -8,7 +8,6 @@ use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
 use App\Repositories\PensionSettingRepository;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -56,49 +55,5 @@ class PensionSettingsManagementService
 
             return $updatedSettings;
         });
-    }
-
-    /**
-     * Reset all pension settings to default values from configuration
-     */
-    public function resetToDefaults(int $userId): int
-    {
-        return DB::transaction(function () use ($userId) {
-            $defaults = $this->getDefaultValues();
-            $updatedCount = 0;
-
-            foreach ($defaults as $key => $value) {
-                $setting = PensionSetting::where('key', $key)->first();
-                if ($setting) {
-                    $setting->update(['value' => $value]);
-                    $updatedCount++;
-                }
-            }
-
-            Log::info('Pension settings reset to defaults', [
-                'updated_count' => $updatedCount,
-                'user_id' => $userId,
-            ]);
-
-            return $updatedCount;
-        });
-    }
-
-    /**
-     * Get flattened default values from configuration
-     */
-    private function getDefaultValues(): array
-    {
-        $config = Config::get('pension_defaults');
-        $defaults = [];
-
-        // Flatten nested configuration into key-value pairs
-        foreach ($config as $category => $values) {
-            foreach ($values as $key => $value) {
-                $defaults[$key] = $value;
-            }
-        }
-
-        return $defaults;
     }
 }

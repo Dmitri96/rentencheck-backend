@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust the reverse proxy (Forge's nginx) so APP_URL scheme and client IP
+        // are derived from X-Forwarded-* headers. Without this, SECURE cookies and
+        // HTTPS-only redirects break behind nginx-terminated TLS.
+        $middleware->trustProxies(at: '*');
+
         // Sanctum SPA: requests from sanctum.stateful domains receive
         // session-cookie auth (CSRF protected). Bearer tokens still work
         // for non-stateful origins (third-party API consumers).

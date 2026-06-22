@@ -5,9 +5,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\PensionSettingsController;
 use App\Http\Controllers\Api\RentencheckController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FileController;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,20 +52,16 @@ Route::middleware('throttle:120,1')->group(function () {
             Route::delete('/{advisorId}', [AdminController::class, 'deleteAdvisor']);
         });
 
-        // Pension Settings management
+        // Pension Settings management. Admin UI uses bulk-update only; per-row update
+        // and reset-defaults endpoints were unreachable and were removed.
         Route::prefix('pension-settings')->group(function () {
             Route::get('/', [PensionSettingsController::class, 'index']);
-            Route::put('/{id}', [PensionSettingsController::class, 'update']);
             Route::patch('/bulk-update', [PensionSettingsController::class, 'bulkUpdate']);
-            Route::post('/reset-defaults', [PensionSettingsController::class, 'resetToDefaults']);
         });
     });
 
     // Advisor routes - for financial advisors and admins
     Route::middleware(['auth:sanctum', 'role:' . User::ROLE_ADVISOR . ',' . User::ROLE_ADMIN])->group(function () {
-        // File download route
-        Route::get('/files/{fileId}/download', [FileController::class, 'download'])->name('file.download');
-
         // Client management routes
         Route::apiResource('clients', ClientController::class);
 
@@ -85,16 +79,9 @@ Route::middleware('throttle:120,1')->group(function () {
         });
     });
 
-    // General authenticated routes
+    // General authenticated routes.
+    // /profile was removed — /auth/user returns the same payload (user + permissions).
     Route::middleware('auth:sanctum')->group(function () {
-        // User profile routes
-        Route::get('/profile', function (Request $request) {
-            return response()->json([
-                'user' => $request->user()->load('roles'),
-                'permissions' => $request->user()->getAllPermissions()->pluck('name'),
-            ]);
-        });
-
         // Pension parameters (read-only for calculations)
         Route::get('/pension-parameters', [PensionSettingsController::class, 'getParameters']);
     });

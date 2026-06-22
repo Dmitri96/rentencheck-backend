@@ -80,15 +80,41 @@ class RolesAndPermissionsSeeder extends Seeder
         // Sync all permissions for admin role
         $adminRole->syncPermissions(Permission::all());
 
-        // Create admin user if it doesn't exist
-        $adminUser = User::firstOrCreate(
-            ['email' => 'admin@rentenblick.de'],
+        $this->seedAdminUser();
+
+        // Demo advisor only exists in non-production environments so prod stays clean.
+        if (app()->environment(['local', 'testing', 'staging'])) {
+            $this->seedDemoAdvisor();
+        }
+
+        $this->command->info('Roles and permissions seeded successfully.');
+    }
+
+    /**
+     * Seed the bootstrap admin user. Credentials come from environment variables in production;
+     * local/testing environments fall back to deterministic defaults so the dev workflow stays unchanged.
+     */
+    private function seedAdminUser(): void
+    {
+        $email = (string) env('SEED_ADMIN_EMAIL', 'admin@rentenblick.de');
+        $password = env('SEED_ADMIN_PASSWORD');
+
+        if (app()->environment('production') && empty($password)) {
+            throw new \RuntimeException(
+                'SEED_ADMIN_PASSWORD must be set in production before running db:seed.',
+            );
+        }
+
+        $password ??= 'admin123!';
+
+        User::firstOrCreate(
+            ['email' => $email],
             [
                 'name' => 'Admin',
                 'first_name' => 'System',
                 'last_name' => 'Administrator',
-                'email' => 'admin@rentenblick.de',
-                'password' => bcrypt('admin123!'), // Change in production
+                'email' => $email,
+                'password' => bcrypt($password),
                 'company' => 'RENTENBLICK.de',
                 'plan' => 'enterprise',
                 'status' => User::STATUS_ACTIVE,
@@ -96,22 +122,22 @@ class RolesAndPermissionsSeeder extends Seeder
                 'accept_privacy' => true,
                 'email_verified_at' => now(),
             ],
-        );
+        )->syncRoles([User::ROLE_ADMIN]);
+    }
 
-        // Ensure admin has the correct role
-        if (! $adminUser->hasRole(User::ROLE_ADMIN)) {
-            $adminUser->assignRole(User::ROLE_ADMIN);
-        }
-
-        // Create sample financial advisor if it doesn't exist
-        $advisorUser = User::firstOrCreate(
+    /**
+     * Seed the demo advisor used in local + automated tests. Never runs in production.
+     */
+    private function seedDemoAdvisor(): void
+    {
+        User::firstOrCreate(
             ['email' => 'berater@rentenblick.de'],
             [
                 'name' => 'Max Mustermann',
                 'first_name' => 'Max',
                 'last_name' => 'Mustermann',
                 'email' => 'berater@rentenblick.de',
-                'password' => bcrypt('berater123!'), // Change in production
+                'password' => bcrypt('berater123!'),
                 'company' => 'Musterberatung GmbH',
                 'plan' => 'professional',
                 'phone' => '+49 123 456789',
@@ -120,15 +146,6 @@ class RolesAndPermissionsSeeder extends Seeder
                 'accept_privacy' => true,
                 'email_verified_at' => now(),
             ],
-        );
-
-        // Ensure advisor has the correct role
-        if (! $advisorUser->hasRole(User::ROLE_ADVISOR)) {
-            $advisorUser->assignRole(User::ROLE_ADVISOR);
-        }
-
-        $this->command->info('Roles and permissions created successfully!');
-        $this->command->info('Admin user: admin@rentenblick.de (password: admin123!)');
-        $this->command->info('Advisor user: berater@rentenblick.de (password: berater123!)');
+        )->syncRoles([User::ROLE_ADVISOR]);
     }
 }

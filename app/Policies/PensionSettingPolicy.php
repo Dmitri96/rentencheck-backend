@@ -70,16 +70,6 @@ class PensionSettingPolicy
     }
 
     /**
-     * Determine whether the user can reset pension settings to defaults.
-     */
-    public function resetToDefaults(User $user): Response
-    {
-        return $user->hasRole('admin')
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen zurückzusetzen.');
-    }
-
-    /**
      * Determine whether the user can bulk update pension settings.
      */
     public function bulkUpdate(User $user): Response

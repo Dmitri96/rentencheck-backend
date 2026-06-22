@@ -164,30 +164,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Get total number of rentenchecks for this advisor
-     */
-    public function getTotalRentenchecksAttribute(): int
-    {
-        return $this->clients()
-            ->withCount('rentenchecks')
-            ->get()
-            ->sum('rentenchecks_count');
-    }
-
-    /**
-     * Get total number of completed rentenchecks for this advisor
-     */
-    public function getCompletedRentenchecksAttribute(): int
-    {
-        return $this->clients()
-            ->withCount(['rentenchecks' => function ($query) {
-                $query->where('is_completed', true);
-            }])
-            ->get()
-            ->sum('rentenchecks_count');
-    }
-
-    /**
      * Scope to get only advisors
      */
     public function scopeAdvisors($query)

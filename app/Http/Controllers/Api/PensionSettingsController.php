@@ -7,14 +7,12 @@ namespace App\Http\Controllers\Api;
 use App\Calculators\PensionCalculator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkUpdatePensionSettingsRequest;
-use App\Http\Requests\UpdatePensionSettingRequest;
 use App\Http\Resources\PensionParametersResource;
 use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
 use App\Services\PensionSettingsManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Pension Settings API Controller.
@@ -53,30 +51,6 @@ final class PensionSettingsController extends Controller
         ]);
     }
 
-    public function update(UpdatePensionSettingRequest $request, int $id): JsonResponse
-    {
-        $setting = PensionSetting::findOrFail($id);
-        Gate::authorize('update', $setting);
-
-        $setting->update([
-            'value' => $request->validated('value'),
-            'description' => $request->validated('description', $setting->description),
-            'description_de' => $request->validated('description_de', $setting->description_de),
-        ]);
-
-        Log::info('Pension setting updated', [
-            'setting_id' => $setting->id,
-            'setting_key' => $setting->key,
-            'new_value' => $setting->value,
-            'user_id' => $request->user()?->id,
-        ]);
-
-        return $this->envelope(
-            ['data' => new PensionSettingResource($setting)],
-            'Einstellung erfolgreich aktualisiert.',
-        );
-    }
-
     public function bulkUpdate(BulkUpdatePensionSettingsRequest $request): JsonResponse
     {
         Gate::authorize('bulkUpdate', PensionSetting::class);
@@ -92,18 +66,6 @@ final class PensionSettingsController extends Controller
                 'current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters()),
             ],
             $updated->count() . ' Einstellungen erfolgreich aktualisiert.',
-        );
-    }
-
-    public function resetToDefaults(): JsonResponse
-    {
-        Gate::authorize('resetToDefaults', PensionSetting::class);
-
-        $updatedCount = $this->managementService->resetToDefaults(request()->user()->id);
-
-        return $this->envelope(
-            ['current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters())],
-            "{$updatedCount} Einstellungen auf Standardwerte zurückgesetzt.",
         );
     }
 

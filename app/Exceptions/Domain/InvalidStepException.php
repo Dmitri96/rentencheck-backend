@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions\Domain;
 
-final class InvalidStepException extends RentencheckException
+final class InvalidStepException extends DomainException
 {
     public function __construct(int $step)
     {
