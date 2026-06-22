@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Extends the users table with profile fields, account status, and consent flags.
+     *
+     * Squashed from two separate add_* migrations into one coherent extension.
      */
     public function up(): void
     {
@@ -16,19 +18,22 @@ return new class extends Migration
             $table->string('first_name')->nullable()->after('name');
             $table->string('last_name')->nullable()->after('first_name');
 
-            // Additional user information
+            // Contact and account information
             $table->string('phone')->nullable()->after('email');
             $table->string('company')->nullable()->after('phone');
             $table->string('plan')->default('free')->after('company');
 
-            // Newsletter subscription
+            // Newsletter subscription and consent flags
             $table->boolean('newsletter')->default(false)->after('plan');
-
-            // Terms and privacy acceptance
             $table->boolean('accept_terms')->default(false)->after('newsletter');
             $table->boolean('accept_privacy')->default(false)->after('accept_terms');
 
-            // Make name nullable since we'll use first_name and last_name
+            // Account lifecycle status
+            $table->enum('status', ['active', 'blocked', 'pending'])
+                ->default('active')
+                ->after('password');
+
+            // Make name nullable since first_name/last_name are used instead
             $table->string('name')->nullable()->change();
         });
     }
@@ -48,9 +53,9 @@ return new class extends Migration
                 'newsletter',
                 'accept_terms',
                 'accept_privacy',
+                'status',
             ]);
 
-            // Make name required again
             $table->string('name')->nullable(false)->change();
         });
     }

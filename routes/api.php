@@ -74,7 +74,8 @@ Route::middleware('throttle:120,1')->group(function () {
             Route::put('/{rentencheckId}/step/{step}', [RentencheckController::class, 'updateStep']);
             Route::put('/{rentencheckId}/step/{step}/complete', [RentencheckController::class, 'markStepCompleted']);
             Route::put('/{rentencheckId}/complete', [RentencheckController::class, 'complete']);
-            Route::get('/{rentencheckId}/pdf', [RentencheckController::class, 'downloadPdf']);
+            // PDF generation is expensive — tighter throttle than the baseline 120/min
+            Route::middleware('throttle:20,1')->get('/{rentencheckId}/pdf', [RentencheckController::class, 'downloadPdf']);
             Route::delete('/{rentencheckId}', [RentencheckController::class, 'destroy']);
         });
     });

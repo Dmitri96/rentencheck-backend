@@ -121,3 +121,31 @@ it('logs deletion events', function (): void {
 
     expect($log)->not->toBeNull();
 });
+
+it('captures causer_id when mutation happens in an authenticated request context', function (): void {
+    // Authenticate a user so Spatie can resolve Auth::user() as causer
+    $admin = User::factory()->create(['status' => 'active']);
+    $admin->assignRole('admin');
+    $this->actingAs($admin, 'sanctum');
+
+    $setting = PensionSetting::create([
+        'key' => 'causer_test_rate',
+        'category' => 'economic_assumptions',
+        'value' => 3.0,
+        'unit' => '%',
+        'description' => 'Causer verification',
+        'description_de' => 'Kausaler Test',
+        'is_active' => true,
+        'valid_from' => now(),
+    ]);
+
+    $log = Activity::where('subject_id', $setting->id)
+        ->where('subject_type', PensionSetting::class)
+        ->where('event', 'created')
+        ->first();
+
+    expect($log)->not->toBeNull();
+    // Spatie sets causer_type + causer_id from Auth::user() when guard is active
+    expect($log->causer_id)->toBe($admin->id);
+    expect($log->causer_type)->toBe(User::class);
+});
