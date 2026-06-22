@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * RentencheckContract Model
@@ -20,23 +22,35 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $contract
  * @property string|null $company
  * @property string|null $contract_type
- * @property float|null $interest_rate
+ * @property string|null $interest_rate decimal:2 stored as string
  * @property int|null $maturity_year
  * @property int|null $pension_start_year
- * @property float|null $guaranteed_amount
- * @property float|null $projected_amount
- * @property float|null $monthly_amount
+ * @property string|null $guaranteed_amount decimal:2 stored as string
+ * @property string|null $projected_amount decimal:2 stored as string
+ * @property string|null $monthly_amount decimal:2 stored as string
  * @property int|null $start_year
  * @property string|null $frequency
  * @property string|null $description
  * @property string|null $type
  * @property int $sort_order
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  * @property-read float $annual_amount
+ * @property-read string $display_name
+ * @property-read string $formatted_amount
+ * @property-read Rentencheck $rentencheck
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static> ordered()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> category(string $category)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> payoutContracts()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> pensionContracts()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> additionalIncomeContracts()
+ *
+ * @use HasFactory<Factory<static>>
  */
 final class RentencheckContract extends Model
 {
+    /** @use HasFactory<Factory<static>> */
     use HasFactory;
 
     /**
@@ -115,6 +129,8 @@ final class RentencheckContract extends Model
 
     /**
      * Get the rentencheck this contract belongs to
+     *
+     * @return BelongsTo<Rentencheck, $this>
      */
     public function rentencheck(): BelongsTo
     {
@@ -124,10 +140,10 @@ final class RentencheckContract extends Model
     /**
      * Scope for specific category
      *
-     * @param  Builder  $query
-     * @return Builder
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeCategory($query, string $category)
+    public function scopeCategory(Builder $query, string $category): Builder
     {
         return $query->where('category', $category);
     }
@@ -135,10 +151,10 @@ final class RentencheckContract extends Model
     /**
      * Scope for ordering contracts by sort order and ID
      *
-     * @param  Builder  $query
-     * @return Builder
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('id');
     }
@@ -146,10 +162,10 @@ final class RentencheckContract extends Model
     /**
      * Scope for payout contracts only
      *
-     * @param  Builder  $query
-     * @return Builder
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopePayoutContracts($query)
+    public function scopePayoutContracts(Builder $query): Builder
     {
         return $query->where('category', self::CATEGORY_PAYOUT);
     }
@@ -157,10 +173,10 @@ final class RentencheckContract extends Model
     /**
      * Scope for pension contracts only
      *
-     * @param  Builder  $query
-     * @return Builder
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopePensionContracts($query)
+    public function scopePensionContracts(Builder $query): Builder
     {
         return $query->where('category', self::CATEGORY_PENSION);
     }
@@ -168,10 +184,10 @@ final class RentencheckContract extends Model
     /**
      * Scope for additional income contracts only
      *
-     * @param  Builder  $query
-     * @return Builder
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeAdditionalIncomeContracts($query)
+    public function scopeAdditionalIncomeContracts(Builder $query): Builder
     {
         return $query->where('category', self::CATEGORY_ADDITIONAL_INCOME);
     }
@@ -257,6 +273,8 @@ final class RentencheckContract extends Model
      *
      * Business rule validation to ensure data integrity
      * across different contract types.
+     *
+     * @return array<int, string>
      */
     public function validateContractData(): array
     {
@@ -306,6 +324,8 @@ final class RentencheckContract extends Model
      *
      * Factory method to create contracts from validated frontend data
      * with proper data transformation and business logic application.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function createFromData(int $rentencheckId, string $category, array $data, int $sortOrder = 0): self
     {

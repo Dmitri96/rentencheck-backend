@@ -23,6 +23,8 @@ class PensionSettingsManagementService
 
     /**
      * Get all pension settings grouped by category with API Resources transformation
+     *
+     * @return array<string, mixed>
      */
     public function getFormattedSettingsWithResources(): array
     {
@@ -35,6 +37,9 @@ class PensionSettingsManagementService
 
     /**
      * Update multiple pension settings in a transaction
+     *
+     * @param  array<int, array<string, mixed>>  $settingsData
+     * @return Collection<int, PensionSetting>
      */
     public function bulkUpdateSettings(array $settingsData, int $userId): Collection
     {

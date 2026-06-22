@@ -23,6 +23,8 @@ final class PensionSettingRepository
 {
     /**
      * All active settings for a given category, valid as of now.
+     *
+     * @return EloquentCollection<int, PensionSetting>
      */
     public function getByCategory(string $category): EloquentCollection
     {
@@ -57,6 +59,8 @@ final class PensionSettingRepository
 
     /**
      * Inflation / pension-increase / investment-return triple.
+     *
+     * @return array<string, float>
      */
     public function getEconomicAssumptions(): array
     {
@@ -71,6 +75,8 @@ final class PensionSettingRepository
 
     /**
      * Health + care insurance rates plus BAV exemption.
+     *
+     * @return array<string, float>
      */
     public function getSocialInsuranceRates(): array
     {
@@ -86,6 +92,8 @@ final class PensionSettingRepository
 
     /**
      * German income-tax brackets (Stufen 1–5) + thresholds.
+     *
+     * @return array<string, array<string, float>>
      */
     public function getTaxBrackets(): array
     {
@@ -124,6 +132,8 @@ final class PensionSettingRepository
 
     /**
      * Admin-formatted settings tree (used by legacy settings UI).
+     *
+     * @return array<string, mixed>
      */
     public function getFormattedSettings(): array
     {
@@ -144,12 +154,19 @@ final class PensionSettingRepository
     /**
      * Active settings grouped by category as Eloquent collections, used by
      * API Resources that need raw model access.
+     *
+     * @return Collection<string, mixed>
      */
     public function getGroupedSettings(): Collection
     {
         return $this->activeSettings()->groupBy('category');
     }
 
+    /**
+     * All currently active settings not yet expired.
+     *
+     * @return EloquentCollection<int, PensionSetting>
+     */
     private function activeSettings(): EloquentCollection
     {
         return PensionSetting::query()

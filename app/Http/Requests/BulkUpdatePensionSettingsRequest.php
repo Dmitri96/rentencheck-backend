@@ -23,6 +23,8 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
@@ -35,6 +37,8 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
 
     /**
      * Get custom validation error messages in German.
+     *
+     * @return array<string, string>
      */
     public function messages(): array
     {
@@ -54,6 +58,8 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
 
     /**
      * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
      */
     public function attributes(): array
     {

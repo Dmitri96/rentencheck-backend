@@ -5,14 +5,47 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Services\Rentenchecks\RentencheckStepValidator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $client_id
+ * @property string $status
+ * @property string|null $title
+ * @property string|null $notes
+ * @property array<int, int> $completed_steps
+ * @property array<string, mixed>|null $step_1_data
+ * @property array<string, mixed>|null $step_2_data
+ * @property array<string, mixed>|null $step_3_data
+ * @property array<string, mixed>|null $step_4_data
+ * @property array<string, mixed>|null $step_5_data
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read int $progress_percentage
+ * @property-read bool $is_complete
+ * @property-read User $user
+ * @property-read Client $client
+ * @property-read Collection<int, RentencheckContract> $contracts
+ * @property-read Collection<int, File> $files
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> forUser(int $userId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> forClient(int $clientId)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> withStatus(string $status)
+ *
+ * @use HasFactory<Factory<static>>
+ */
 class Rentencheck extends Model
 {
+    /** @use HasFactory<Factory<static>> */
     use HasFactory;
 
     protected $fillable = [
@@ -42,6 +75,8 @@ class Rentencheck extends Model
 
     /**
      * Get the user that owns the rentencheck
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -50,6 +85,8 @@ class Rentencheck extends Model
 
     /**
      * Get the client this rentencheck belongs to
+     *
+     * @return BelongsTo<Client, $this>
      */
     public function client(): BelongsTo
     {
@@ -58,6 +95,8 @@ class Rentencheck extends Model
 
     /**
      * Get all contracts for this rentencheck
+     *
+     * @return HasMany<RentencheckContract, $this>
      */
     public function contracts(): HasMany
     {
@@ -66,6 +105,8 @@ class Rentencheck extends Model
 
     /**
      * Get payout contracts
+     *
+     * @return HasMany<RentencheckContract, $this>
      */
     public function payoutContracts(): HasMany
     {
@@ -74,6 +115,8 @@ class Rentencheck extends Model
 
     /**
      * Get pension contracts
+     *
+     * @return HasMany<RentencheckContract, $this>
      */
     public function pensionContracts(): HasMany
     {
@@ -82,6 +125,8 @@ class Rentencheck extends Model
 
     /**
      * Get additional income contracts
+     *
+     * @return HasMany<RentencheckContract, $this>
      */
     public function additionalIncomeContracts(): HasMany
     {
@@ -90,6 +135,8 @@ class Rentencheck extends Model
 
     /**
      * Get all files for this rentencheck
+     *
+     * @return MorphMany<File, $this>
      */
     public function files(): MorphMany
     {
@@ -98,10 +145,13 @@ class Rentencheck extends Model
 
     /**
      * Get PDF files only
+     *
+     * @return MorphMany<File, $this>
      */
     public function pdfFiles(): MorphMany
     {
-        return $this->files()->ofType('pdf');
+        /** @var MorphMany<File, $this> */
+        return $this->files()->where('type', 'pdf');
     }
 
     /**
@@ -109,6 +159,7 @@ class Rentencheck extends Model
      */
     public function getMainPdfFile(): ?File
     {
+        /** @var File|null */
         return $this->pdfFiles()
             ->where('description', 'Rentencheck PDF')
             ->orderBy('created_at', 'desc')
@@ -199,6 +250,8 @@ class Rentencheck extends Model
      * The "valid enough to auto-complete" rules live in
      * App\Services\Rentenchecks\RentencheckStepValidator so the model can stay an
      * Eloquent model and the rules are unit-testable in isolation.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function updateStepData(int $step, array $data): void
     {
@@ -214,24 +267,33 @@ class Rentencheck extends Model
 
     /**
      * Scope for user's rentenchecks
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeForUser($query, int $userId)
+    public function scopeForUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
 
     /**
      * Scope for specific client
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeForClient($query, int $clientId)
+    public function scopeForClient(Builder $query, int $clientId): Builder
     {
         return $query->where('client_id', $clientId);
     }
 
     /**
      * Scope for status
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeWithStatus($query, string $status)
+    public function scopeWithStatus(Builder $query, string $status): Builder
     {
         return $query->where('status', $status);
     }

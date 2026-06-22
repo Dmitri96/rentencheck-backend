@@ -9,7 +9,9 @@ use App\Http\Requests\GetAdvisorsRequest;
 use App\Models\Client;
 use App\Models\Rentencheck;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,6 +19,8 @@ final class AdminService
 {
     /**
      * Get dashboard overview statistics
+     *
+     * @return array<string, mixed>
      */
     public function getDashboardOverview(): array
     {
@@ -58,6 +62,8 @@ final class AdminService
 
     /**
      * Get all financial advisors with statistics and filtering
+     *
+     * @return LengthAwarePaginator<int, User>
      */
     public function getAdvisors(GetAdvisorsRequest $request): LengthAwarePaginator
     {
@@ -137,6 +143,8 @@ final class AdminService
 
     /**
      * Get detailed advisor statistics
+     *
+     * @return array<string, mixed>
      */
     public function getAdvisorDetails(int $advisorId): array
     {
@@ -180,8 +188,10 @@ final class AdminService
 
     /**
      * Apply filters to the query
+     *
+     * @param  Builder<User>  $query
      */
-    private function applyFilters($query, GetAdvisorsRequest $request): void
+    private function applyFilters(Builder $query, GetAdvisorsRequest $request): void
     {
         if ($request->has('status') && $request->validated('status') !== 'all') {
             $query->where('status', $request->validated('status'));
@@ -199,8 +209,10 @@ final class AdminService
 
     /**
      * Apply sorting to the query
+     *
+     * @param  Builder<User>  $query
      */
-    private function applySorting($query, GetAdvisorsRequest $request): void
+    private function applySorting(Builder $query, GetAdvisorsRequest $request): void
     {
         $sortBy = $request->validated('sort_by', 'created_at');
         $sortOrder = $request->validated('sort_order', 'desc');
@@ -209,8 +221,11 @@ final class AdminService
 
     /**
      * Generate monthly statistics for the last 12 months
+     *
+     * @param  Collection<int, Rentencheck>  $totalRentenchecks
+     * @return array<int, array<string, mixed>>
      */
-    private function generateMonthlyStats($totalRentenchecks): array
+    private function generateMonthlyStats(Collection $totalRentenchecks): array
     {
         $monthlyStats = [];
 
@@ -233,8 +248,10 @@ final class AdminService
 
     /**
      * Calculate average completion time for rentenchecks
+     *
+     * @param  Collection<int, Rentencheck>  $completedRentenchecks
      */
-    private function calculateAverageCompletionTime($completedRentenchecks): ?float
+    private function calculateAverageCompletionTime(Collection $completedRentenchecks): ?float
     {
         if ($completedRentenchecks->isEmpty()) {
             return null;
@@ -249,8 +266,11 @@ final class AdminService
 
     /**
      * Get recent clients data
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Client>  $clients
+     * @return array<int, array<string, mixed>>
      */
-    private function getRecentClients($clients): array
+    private function getRecentClients(\Illuminate\Database\Eloquent\Collection $clients): array
     {
         return $clients->sortByDesc('created_at')
             ->take(10)

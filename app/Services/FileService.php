@@ -9,6 +9,7 @@ use App\Models\Rentencheck;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -66,6 +67,8 @@ final class FileService
 
     /**
      * Get or generate PDF content for download
+     *
+     * @return array{content: string, filename: string}
      */
     public function getRentencheckPdfContent(Rentencheck $rentencheck): array
     {
@@ -90,7 +93,7 @@ final class FileService
      * Create file from uploaded content
      */
     public function createFromUpload(
-        $uploadedFile,
+        UploadedFile $uploadedFile,
         Model $model,
         int $userId,
         string $type = 'document',

@@ -4,14 +4,50 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $filename
+ * @property string $mime_type
+ * @property string $extension
+ * @property int $size
+ * @property string $disk
+ * @property string $path
+ * @property string $type
+ * @property string|null $description
+ * @property string $fileable_type
+ * @property int $fileable_id
+ * @property array<string, mixed>|null $metadata
+ * @property bool $is_public
+ * @property Carbon $uploaded_at
+ * @property int $uploaded_by
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read string $url
+ * @property-read string $human_size
+ * @property-read Model $fileable
+ * @property-read User $uploadedBy
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> ofType(string $type)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> public()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> private()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> uploadedBy(int $userId)
+ *
+ * @use HasFactory<Factory<static>>
+ */
 class File extends Model
 {
+    /** @use HasFactory<Factory<static>> */
     use HasFactory;
 
     protected $fillable = [
@@ -43,6 +79,8 @@ class File extends Model
 
     /**
      * Get the parent fileable model (Rentencheck, Client, etc.)
+     *
+     * @return MorphTo<Model, $this>
      */
     public function fileable(): MorphTo
     {
@@ -51,6 +89,8 @@ class File extends Model
 
     /**
      * Get the user who uploaded this file
+     *
+     * @return BelongsTo<User, $this>
      */
     public function uploadedBy(): BelongsTo
     {
@@ -115,32 +155,44 @@ class File extends Model
 
     /**
      * Scope for specific file types
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeOfType($query, string $type)
+    public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
     }
 
     /**
      * Scope for public files
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopePublic($query)
+    public function scopePublic(Builder $query): Builder
     {
         return $query->where('is_public', true);
     }
 
     /**
      * Scope for private files
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopePrivate($query)
+    public function scopePrivate(Builder $query): Builder
     {
         return $query->where('is_public', false);
     }
 
     /**
      * Scope for files uploaded by specific user
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeUploadedBy($query, int $userId)
+    public function scopeUploadedBy(Builder $query, int $userId): Builder
     {
         return $query->where('uploaded_by', $userId);
     }
@@ -149,7 +201,7 @@ class File extends Model
      * Create a file record from uploaded file
      */
     public static function createFromUpload(
-        $uploadedFile,
+        UploadedFile $uploadedFile,
         Model $model,
         int $userId,
         string $type = 'document',

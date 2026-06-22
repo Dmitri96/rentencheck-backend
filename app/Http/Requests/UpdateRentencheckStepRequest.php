@@ -52,6 +52,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
     /**
      * Step 1: Personal and Financial Information rules
+     *
+     * @return array<string, mixed>
      */
     private function getStep1Rules(): array
     {
@@ -69,6 +71,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
     /**
      * Step 2: Expectations rules
+     *
+     * @return array<string, mixed>
      */
     private function getStep2Rules(): array
     {
@@ -84,6 +88,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
     /**
      * Step 3: Contract Overview rules - Updated for comprehensive contract structure
+     *
+     * @return array<string, mixed>
      */
     private function getStep3Rules(): array
     {
@@ -139,6 +145,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
     /**
      * Step 4: Important Aspects rules
+     *
+     * @return array<string, mixed>
      */
     private function getStep4Rules(): array
     {
@@ -163,6 +171,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
 
     /**
      * Step 5: Conclusion rules
+     *
+     * @return array<string, mixed>
      */
     private function getStep5Rules(): array
     {

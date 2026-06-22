@@ -6,15 +6,45 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int $id
+ * @property string|null $name
+ * @property string|null $first_name
+ * @property string|null $last_name
+ * @property string $email
+ * @property Carbon|null $email_verified_at
+ * @property string $password
+ * @property string|null $remember_token
+ * @property string|null $phone
+ * @property string|null $company
+ * @property string $plan
+ * @property bool $newsletter
+ * @property bool $accept_terms
+ * @property bool $accept_privacy
+ * @property string $status
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property-read string $full_name
+ * @property-read Collection<int, Client> $clients
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> advisors()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> blocked()
+ *
+ * @use HasFactory<UserFactory>
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -109,6 +139,8 @@ class User extends Authenticatable
 
     /**
      * Get the clients for the user.
+     *
+     * @return HasMany<Client, $this>
      */
     public function clients(): HasMany
     {
@@ -165,24 +197,33 @@ class User extends Authenticatable
 
     /**
      * Scope to get only advisors
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeAdvisors($query)
+    public function scopeAdvisors(Builder $query): Builder
     {
         return $query->role(self::ROLE_ADVISOR);
     }
 
     /**
      * Scope to get only active users
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_ACTIVE);
     }
 
     /**
      * Scope to get only blocked users
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeBlocked($query)
+    public function scopeBlocked(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_BLOCKED);
     }

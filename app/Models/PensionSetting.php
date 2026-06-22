@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -28,10 +29,14 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property Carbon|null $valid_until
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @use HasFactory<Factory<static>>
  */
 class PensionSetting extends Model
 {
+    /** @use HasFactory<Factory<static>> */
     use HasFactory;
+
     use LogsActivity;
 
     protected $fillable = [

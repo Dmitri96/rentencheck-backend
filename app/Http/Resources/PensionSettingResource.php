@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\PensionSetting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,11 +12,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * PensionSetting API Resource
  *
  * Transforms pension setting model data for API responses
+ *
+ * @mixin PensionSetting
  */
 class PensionSettingResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {

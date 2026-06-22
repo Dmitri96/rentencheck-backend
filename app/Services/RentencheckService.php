@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Exceptions\Domain\InvalidStepException;
 use App\Exceptions\Domain\RentencheckNotCompleteException;
 use App\Models\Client;
+use App\Models\File;
 use App\Models\Rentencheck;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,8 @@ final class RentencheckService
 
     /**
      * Create a new rentencheck for a client
+     *
+     * @param  array<string, mixed>  $data
      */
     public function createRentencheck(Client $client, int $userId, array $data = []): Rentencheck
     {
@@ -51,6 +54,8 @@ final class RentencheckService
 
     /**
      * Update step data for a rentencheck
+     *
+     * @param  array<string, mixed>  $stepData
      */
     public function updateStep(Rentencheck $rentencheck, int $step, array $stepData): Rentencheck
     {
@@ -84,6 +89,8 @@ final class RentencheckService
 
     /**
      * Complete a rentencheck and generate PDF
+     *
+     * @return array{rentencheck: Rentencheck, pdf_file: File}
      */
     public function completeRentencheck(Rentencheck $rentencheck): array
     {
