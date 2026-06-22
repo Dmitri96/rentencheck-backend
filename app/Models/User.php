@@ -126,6 +126,40 @@ class User extends Authenticatable
     const ROLE_ADVISOR = 'financial_advisor';
 
     /**
+     * Plan tier constants.
+     *
+     * Self-registration uses the consumer tiers (free/basic/premium/vip).
+     * The admin onboarding flow uses `professional`; the seeded system admin gets `enterprise`.
+     * Treat this list as the single source of truth for plan validation.
+     */
+    public const PLAN_FREE = 'free';
+
+    public const PLAN_BASIC = 'basic';
+
+    public const PLAN_PREMIUM = 'premium';
+
+    public const PLAN_VIP = 'vip';
+
+    public const PLAN_PROFESSIONAL = 'professional';
+
+    public const PLAN_ENTERPRISE = 'enterprise';
+
+    /** @var list<string> Consumer-facing tiers visible on the public registration form. */
+    public const PUBLIC_PLANS = [
+        self::PLAN_FREE,
+        self::PLAN_BASIC,
+        self::PLAN_PREMIUM,
+        self::PLAN_VIP,
+    ];
+
+    /** @var list<string> All valid plan values, including admin-onboarded tiers. */
+    public const ALL_PLANS = [
+        ...self::PUBLIC_PLANS,
+        self::PLAN_PROFESSIONAL,
+        self::PLAN_ENTERPRISE,
+    ];
+
+    /**
      * Get the user's full name.
      */
     public function getFullNameAttribute(): string

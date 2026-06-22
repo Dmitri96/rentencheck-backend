@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions\Contracts;
 
+use App\Exceptions\Domain\BusinessRuleViolationException;
 use App\Models\Rentencheck;
 use App\Models\RentencheckContract;
-use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Replace a rentencheck's contracts (payout / pension / additional income)
@@ -76,13 +77,19 @@ final readonly class UpdateContractsForStepAction
 
                 return $results;
             });
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            // Promote any DB/Eloquent failure to a domain-level error so the
+            // global exception renderer returns 422 with our German message —
+            // and the original SQL exception is preserved as `previous` for logs.
             Log::error('Failed to update contracts', [
                 'rentencheck_id' => $rentencheck->id,
                 'error' => $e->getMessage(),
             ]);
 
-            throw new Exception('Fehler beim Aktualisieren der Verträge: ' . $e->getMessage());
+            throw new BusinessRuleViolationException(
+                'Fehler beim Aktualisieren der Verträge.',
+                previous: $e,
+            );
         }
     }
 
@@ -110,13 +117,9 @@ final readonly class UpdateContractsForStepAction
                     $index,
                 );
 
-                $validationErrors = $contract->validateContractData();
-                if (! empty($validationErrors)) {
-                    $results['errors'][] = "{$label} {$position}: " . implode(', ', $validationErrors);
-
-                    continue;
-                }
-
+                // Pre-creation validation lives in ValidateContractDataAction and
+                // the FormRequest; here we only enforce the year-not-in-the-past rule
+                // because it depends on the runtime "today" date.
                 $futureField = $config['futureYearField'];
                 if ($futureField !== null && $contract->$futureField && date('Y') > $contract->$futureField) {
                     $results['errors'][] = "{$label} {$position}: " . $config['futureYearError'];
@@ -126,7 +129,10 @@ final readonly class UpdateContractsForStepAction
 
                 $contract->save();
                 $results['created']++;
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
+                // Per-contract failures are accumulated as warnings so the rest
+                // of the batch still persists. The catch-all `try` above promotes
+                // batch-level failures to a domain exception.
                 $results['errors'][] = "Fehler bei {$label} {$position}: " . $e->getMessage();
                 Log::warning("Failed to create {$label}", [
                     'rentencheck_id' => $rentencheck->id,

@@ -11,15 +11,14 @@ use App\Repositories\PensionSettingRepository;
  * Orchestrates the pension analysis pipeline.
  *
  * Pulls settings from the repository, then delegates math to the pure
- * InflationProjector / NetIncomeCalculator / TaxCalculator collaborators.
- *
- * Replaces PensionCalculationService for the analysis paths used by
- * controllers. The legacy service is kept as a thin facade during the
- * refactor and removed once all callers migrate.
+ * InflationProjector / NetIncomeCalculator collaborators.
  */
 final class PensionCalculator
 {
-    /** Realistic German life expectancy used when not configured per-rentencheck. */
+    /**
+     * Final fallback if the admin has not configured `life_expectancy` in the
+     * pension settings table. Reflects current German actuarial averages.
+     */
     private const DEFAULT_LIFE_EXPECTANCY = 85;
 
     public function __construct(
@@ -47,7 +46,8 @@ final class PensionCalculator
 
         $currentAge = (int) ($step2['currentAge'] ?? 30);
         $retirementAge = (int) ($step2['retirementAge'] ?? 67);
-        $lifeExpectancy = self::DEFAULT_LIFE_EXPECTANCY;
+        // Read life expectancy from settings so admin tweaks affect both the math AND parameters_used.
+        $lifeExpectancy = (int) ($this->settings->getValue('life_expectancy') ?? self::DEFAULT_LIFE_EXPECTANCY);
         $yearsToRetirement = $retirementAge - $currentAge;
 
         // Desired pension projection
@@ -140,7 +140,7 @@ final class PensionCalculator
             ],
             'demographics' => [
                 'retirement_age' => (int) ($this->settings->getValue('retirement_age') ?? 67),
-                'life_expectancy' => (int) ($this->settings->getValue('life_expectancy') ?? 85),
+                'life_expectancy' => (int) ($this->settings->getValue('life_expectancy') ?? self::DEFAULT_LIFE_EXPECTANCY),
             ],
         ];
     }

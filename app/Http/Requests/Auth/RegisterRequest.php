@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 
 final class RegisterRequest extends FormRequest
@@ -30,7 +32,7 @@ final class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^[\+]?[0-9\s\-\(\)]+$/'],
             'company' => ['nullable', 'string', 'max:100'],
-            'plan' => ['required', 'string', 'in:free,basic,premium,vip'],
+            'plan' => ['required', 'string', Rule::in(User::PUBLIC_PLANS)],
             'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
             'password_confirmation' => ['required', 'string'],
             'accept_terms' => ['required', 'boolean', 'accepted'],

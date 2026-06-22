@@ -10,10 +10,10 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
 
 /**
- * Authorization policy for pension settings management
+ * Authorization policy for pension settings management.
  *
  * Controls who can view, create, update, and delete pension settings.
- * Only users with 'admin' or 'pension_manager' roles should have access.
+ * Currently admin-only — no other role is seeded with pension permissions.
  */
 class PensionSettingPolicy
 {
@@ -24,7 +24,7 @@ class PensionSettingPolicy
      */
     public function viewAny(User $user): Response
     {
-        return $user->hasAnyRole(['admin', 'pension_manager'])
+        return $user->hasAnyRole(['admin'])
             ? Response::allow()
             : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen anzuzeigen.');
     }
@@ -34,7 +34,7 @@ class PensionSettingPolicy
      */
     public function view(User $user, PensionSetting $pensionSetting): Response
     {
-        return $user->hasAnyRole(['admin', 'pension_manager'])
+        return $user->hasAnyRole(['admin'])
             ? Response::allow()
             : Response::deny('Sie haben keine Berechtigung, diese Renteneinstellung anzuzeigen.');
     }
@@ -54,7 +54,7 @@ class PensionSettingPolicy
      */
     public function update(User $user, PensionSetting $pensionSetting): Response
     {
-        return $user->hasAnyRole(['admin', 'pension_manager'])
+        return $user->hasAnyRole(['admin'])
             ? Response::allow()
             : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen zu bearbeiten.');
     }
@@ -74,7 +74,7 @@ class PensionSettingPolicy
      */
     public function bulkUpdate(User $user): Response
     {
-        return $user->hasAnyRole(['admin', 'pension_manager'])
+        return $user->hasAnyRole(['admin'])
             ? Response::allow()
             : Response::deny('Sie haben keine Berechtigung, mehrere Renteneinstellungen zu bearbeiten.');
     }

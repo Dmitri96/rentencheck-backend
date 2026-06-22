@@ -106,26 +106,13 @@ final class RentencheckContract extends Model
     public const CATEGORY_ADDITIONAL_INCOME = 'additional_income';
 
     /**
-     * Contract type constants for validation
+     * Valid additional-income frequency values. Source of truth for both the
+     * FormRequest enum (UpdateRentencheckStepRequest) and the post-form
+     * business-rule check in ValidateContractDataAction.
+     *
+     * @var list<string>
      */
-    public const CONTRACT_TYPES = [
-        'Kapital-Lebensvers.',
-        'Rentenvers.',
-        'Fondsgebundene Lebensvers.',
-        'Riester-Rente',
-        'Rürup-Rente',
-        'Betriebliche Altersvorsorge',
-        'Sonstige',
-    ];
-
-    /**
-     * Frequency constants for additional income
-     */
-    public const FREQUENCIES = [
-        'Einmalig',
-        'Monatlich',
-        'Jährlich',
-    ];
+    public const FREQUENCIES = ['Einmalig', 'Monatlich', 'Jährlich'];
 
     /**
      * Get the rentencheck this contract belongs to
@@ -266,57 +253,6 @@ final class RentencheckContract extends Model
         }
 
         return number_format((float) $amount, 2, ',', '.') . ' €';
-    }
-
-    /**
-     * Validate contract data based on category
-     *
-     * Business rule validation to ensure data integrity
-     * across different contract types.
-     *
-     * @return array<int, string>
-     */
-    public function validateContractData(): array
-    {
-        $errors = [];
-
-        // Common validations
-        if (empty($this->contract)) {
-            $errors[] = 'Vertragsname ist erforderlich';
-        }
-
-        if (empty($this->company)) {
-            $errors[] = 'Gesellschaft ist erforderlich';
-        }
-
-        // Category-specific validations
-        switch ($this->category) {
-            case self::CATEGORY_PAYOUT:
-                if (! $this->maturity_year) {
-                    $errors[] = 'Ablaufjahr ist für Auszahlungsverträge erforderlich';
-                }
-                break;
-
-            case self::CATEGORY_PENSION:
-                if (! $this->pension_start_year) {
-                    $errors[] = 'Rentenbeginn-Jahr ist für Rentenverträge erforderlich';
-                }
-                if (! $this->monthly_amount) {
-                    $errors[] = 'Monatlicher Betrag ist für Rentenverträge erforderlich';
-                }
-                break;
-
-            case self::CATEGORY_ADDITIONAL_INCOME:
-                if (! $this->start_year) {
-                    $errors[] = 'Startjahr ist für zusätzliches Einkommen erforderlich';
-                }
-                if (! in_array($this->frequency, self::FREQUENCIES)) {
-                    $errors[] = 'Ungültige Häufigkeit für zusätzliches Einkommen';
-                }
-                break;
-        }
-
-        return $errors;
     }
 
     /**

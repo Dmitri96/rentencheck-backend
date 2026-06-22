@@ -5,10 +5,8 @@ declare(strict_types=1);
 /**
  * Golden-master tests for the pension calculation pipeline.
  *
- * Why: financial math must not silently drift during refactoring.
- *      Phase 3 of the refactor extracts pure calculators out of
- *      PensionCalculationService; these tests lock the observable
- *      output against committed JSON fixtures.
+ * Why: financial math must not silently drift during refactoring. These tests
+ *      lock PensionCalculator's observable output against committed JSON fixtures.
  *
  * Modes:
  *  - Default: assert each scenario equals the fixture.
