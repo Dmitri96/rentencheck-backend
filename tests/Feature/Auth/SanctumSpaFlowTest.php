@@ -27,8 +27,8 @@ it('login returns the session-authenticated user + bearer token', function (): v
         'password' => 'secret',
     ])->assertOk();
 
-    expect($response->json('token'))->toBeString()->not->toBeEmpty();
-    expect($response->json('user.email'))->toBe('user@example.com');
+    expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
+    expect($response->json('data.user.email'))->toBe('user@example.com');
     expect(auth('web')->check())->toBeTrue(); // session set
 });
 
@@ -79,7 +79,7 @@ it('authenticated /me returns the current user via session', function (): void {
     $this->actingAs($user)
         ->getJson('/api/auth/user')
         ->assertOk()
-        ->assertJsonPath('user.email', 'me@example.com');
+        ->assertJsonPath('data.user.email', 'me@example.com');
 });
 
 it('rejects unauthenticated requests to protected routes with 401', function (): void {

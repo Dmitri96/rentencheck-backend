@@ -4,84 +4,63 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\PensionSettings\BulkUpdatePensionSettingsAction;
+use App\Actions\PensionSettings\GetPensionSettingsAction;
 use App\Calculators\PensionCalculator;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\BulkUpdatePensionSettingsRequest;
 use App\Http\Resources\PensionParametersResource;
 use App\Http\Resources\PensionSettingResource;
 use App\Models\PensionSetting;
-use App\Services\PensionSettingsManagementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Gate;
 
 /**
- * Pension Settings API Controller.
+ * Pension settings management for admin users.
  *
- * Thin: business logic in PensionSettingsManagementService and PensionCalculator,
- * authorization via PensionSettingPolicy, errors via global exception renderer.
- *
- * NOTE: this controller keeps the legacy `{success: true, data: ...}` envelope
- * for now (the existing admin UI depends on it). Phase 7 (frontend foundations)
- * consolidates response envelopes across the API.
+ * Extends BaseApiController for the standard {data, message} envelope.
+ * Authorization via $this->authorize() delegates to PensionSettingPolicy.
+ * Errors are mapped by the global renderer in bootstrap/app.php.
  */
-final class PensionSettingsController extends Controller
+final class PensionSettingsController extends BaseApiController
 {
-    public function __construct(
-        private readonly PensionCalculator $pensionCalculator,
-        private readonly PensionSettingsManagementService $managementService,
-    ) {}
-
-    public function index(): JsonResponse
+    public function index(GetPensionSettingsAction $action, PensionCalculator $calculator): JsonResponse
     {
-        Gate::authorize('viewAny', PensionSetting::class);
+        $this->authorize('viewAny', PensionSetting::class);
 
-        return $this->envelope([
-            'data' => $this->managementService->getFormattedSettingsWithResources(),
-            'current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters()),
+        return $this->successResponse([
+            'settings' => $action->execute(),
+            'current_parameters' => new PensionParametersResource($calculator->parameters()),
         ]);
     }
 
     /**
      * Advisor-readable: chart components need tax brackets / insurance rates to render.
      */
-    public function getParameters(): JsonResponse
+    public function getParameters(PensionCalculator $calculator): JsonResponse
     {
-        return $this->envelope([
-            'data' => new PensionParametersResource($this->pensionCalculator->parameters()),
+        return $this->successResponse([
+            'parameters' => new PensionParametersResource($calculator->parameters()),
         ]);
     }
 
-    public function bulkUpdate(BulkUpdatePensionSettingsRequest $request): JsonResponse
-    {
-        Gate::authorize('bulkUpdate', PensionSetting::class);
+    public function bulkUpdate(
+        BulkUpdatePensionSettingsRequest $request,
+        BulkUpdatePensionSettingsAction $action,
+        PensionCalculator $calculator,
+    ): JsonResponse {
+        $this->authorize('bulkUpdate', PensionSetting::class);
 
-        $updated = $this->managementService->bulkUpdateSettings(
+        $updated = $action->execute(
             $request->validated('settings'),
             $request->user()->id,
         );
 
-        return $this->envelope(
+        return $this->successResponse(
             [
-                'data' => PensionSettingResource::collection($updated),
-                'current_parameters' => new PensionParametersResource($this->pensionCalculator->parameters()),
+                'settings' => PensionSettingResource::collection($updated),
+                'current_parameters' => new PensionParametersResource($calculator->parameters()),
             ],
             $updated->count() . ' Einstellungen erfolgreich aktualisiert.',
         );
-    }
-
-    /**
-     * Legacy success envelope. Kept here (not in BaseApiController) because
-     * other controllers have already moved to the modern `{data: ...}` shape.
-     *
-     * @param  array<string, mixed>  $payload
-     */
-    private function envelope(array $payload, ?string $message = null): JsonResponse
-    {
-        $body = ['success' => true] + $payload;
-        if ($message !== null) {
-            $body['message'] = $message;
-        }
-
-        return response()->json($body);
     }
 }

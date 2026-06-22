@@ -6,76 +6,43 @@ namespace App\Policies;
 
 use App\Models\PensionSetting;
 use App\Models\User;
-use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Auth\Access\Response;
 
 /**
  * Authorization policy for pension settings management.
  *
- * Controls who can view, create, update, and delete pension settings.
- * Currently admin-only — no other role is seeded with pension permissions.
+ * Admin-only access. Returns bool, consistent with ClientPolicy and
+ * RentencheckPolicy siblings. No HandlesAuthorization trait needed —
+ * the global exception renderer maps false → 403 automatically.
  */
-class PensionSettingPolicy
+final class PensionSettingPolicy
 {
-    use HandlesAuthorization;
-
-    /**
-     * Determine whether the user can view any pension settings.
-     */
-    public function viewAny(User $user): Response
+    public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin'])
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen anzuzeigen.');
+        return $user->hasRole(User::ROLE_ADMIN);
     }
 
-    /**
-     * Determine whether the user can view the pension setting.
-     */
-    public function view(User $user, PensionSetting $pensionSetting): Response
+    public function view(User $user, PensionSetting $pensionSetting): bool
     {
-        return $user->hasAnyRole(['admin'])
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, diese Renteneinstellung anzuzeigen.');
+        return $user->hasRole(User::ROLE_ADMIN);
     }
 
-    /**
-     * Determine whether the user can create pension settings.
-     */
-    public function create(User $user): Response
+    public function create(User $user): bool
     {
-        return $user->hasRole('admin')
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen zu erstellen.');
+        return $user->hasRole(User::ROLE_ADMIN);
     }
 
-    /**
-     * Determine whether the user can update the pension setting.
-     */
-    public function update(User $user, PensionSetting $pensionSetting): Response
+    public function update(User $user, PensionSetting $pensionSetting): bool
     {
-        return $user->hasAnyRole(['admin'])
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen zu bearbeiten.');
+        return $user->hasRole(User::ROLE_ADMIN);
     }
 
-    /**
-     * Determine whether the user can delete the pension setting.
-     */
-    public function delete(User $user, PensionSetting $pensionSetting): Response
+    public function delete(User $user, PensionSetting $pensionSetting): bool
     {
-        return $user->hasRole('admin')
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, Renteneinstellungen zu löschen.');
+        return $user->hasRole(User::ROLE_ADMIN);
     }
 
-    /**
-     * Determine whether the user can bulk update pension settings.
-     */
-    public function bulkUpdate(User $user): Response
+    public function bulkUpdate(User $user): bool
     {
-        return $user->hasAnyRole(['admin'])
-            ? Response::allow()
-            : Response::deny('Sie haben keine Berechtigung, mehrere Renteneinstellungen zu bearbeiten.');
+        return $user->hasRole(User::ROLE_ADMIN);
     }
 }

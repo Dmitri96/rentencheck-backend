@@ -4,46 +4,43 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\Domain\BusinessRuleViolationException;
+use App\Actions\Admin\CreateAdvisorAction;
+use App\Actions\Admin\DeleteAdvisorAction;
+use App\Actions\Admin\GetAdminDashboardAction;
+use App\Actions\Admin\GetAdvisorDetailsAction;
+use App\Actions\Admin\ListAdvisorsAction;
+use App\Actions\Admin\UpdateAdvisorStatusAction;
 use App\Http\Controllers\BaseApiController;
 use App\Http\Requests\CreateAdvisorRequest;
 use App\Http\Requests\GetAdvisorsRequest;
 use App\Http\Requests\UpdateAdvisorStatusRequest;
 use App\Http\Resources\AdvisorDetailResource;
 use App\Http\Resources\AdvisorResource;
-use App\Http\Resources\DashboardOverviewResource;
-use App\Services\AdminService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
  * Thin HTTP layer for the admin surface.
  *
- * Business logic lives in AdminService. Authorization comes from the route's
- * role:admin middleware. Errors are mapped by the global exception renderer
- * in bootstrap/app.php — no try/catch needed here.
+ * Each method injects exactly the Action it needs. Authorization is handled
+ * by the route's role:admin middleware. Errors are mapped by the global
+ * exception renderer in bootstrap/app.php — no try/catch needed here.
  */
 final class AdminController extends BaseApiController
 {
-    public function __construct(
-        private readonly AdminService $adminService,
-    ) {}
-
-    public function dashboard(): JsonResponse
+    public function dashboard(GetAdminDashboardAction $action): JsonResponse
     {
-        $overview = $this->adminService->getDashboardOverview();
-
-        return (new DashboardOverviewResource($overview))->response()->setStatusCode(200);
+        return $this->successResponse($action->execute());
     }
 
-    public function getAdvisors(GetAdvisorsRequest $request): AnonymousResourceCollection
+    public function getAdvisors(GetAdvisorsRequest $request, ListAdvisorsAction $action): AnonymousResourceCollection
     {
-        return AdvisorResource::collection($this->adminService->getAdvisors($request));
+        return AdvisorResource::collection($action->execute($request->validated()));
     }
 
-    public function createAdvisor(CreateAdvisorRequest $request): JsonResponse
+    public function createAdvisor(CreateAdvisorRequest $request, CreateAdvisorAction $action): JsonResponse
     {
-        $advisor = $this->adminService->createAdvisor($request);
+        $advisor = $action->execute($request->validated());
 
         return $this->createdResponse(
             [
@@ -58,10 +55,13 @@ final class AdminController extends BaseApiController
         );
     }
 
-    public function updateAdvisorStatus(UpdateAdvisorStatusRequest $request, int $advisorId): JsonResponse
-    {
-        $advisor = $this->adminService->updateAdvisorStatus($advisorId, $request->validated('status'));
-        $action = $request->validated('status') === 'blocked' ? 'gesperrt' : 'aktiviert';
+    public function updateAdvisorStatus(
+        UpdateAdvisorStatusRequest $request,
+        int $advisorId,
+        UpdateAdvisorStatusAction $action,
+    ): JsonResponse {
+        $advisor = $action->execute($advisorId, $request->validated('status'));
+        $actionLabel = $request->validated('status') === 'blocked' ? 'gesperrt' : 'aktiviert';
 
         return $this->successResponse(
             [
@@ -72,20 +72,13 @@ final class AdminController extends BaseApiController
                     'status' => $advisor->status,
                 ],
             ],
-            "Berater wurde erfolgreich {$action}.",
+            "Berater wurde erfolgreich {$actionLabel}.",
         );
     }
 
-    public function deleteAdvisor(int $advisorId): JsonResponse
+    public function deleteAdvisor(int $advisorId, DeleteAdvisorAction $action): JsonResponse
     {
-        try {
-            $this->adminService->deleteAdvisor($advisorId);
-        } catch (\InvalidArgumentException $e) {
-            // The service throws InvalidArgumentException when the advisor still
-            // has clients. Promote to a domain exception so the global renderer
-            // maps it to 422 with a stable error_code.
-            throw new BusinessRuleViolationException($e->getMessage());
-        }
+        $action->execute($advisorId);
 
         return $this->successResponse(
             ['id' => $advisorId],
@@ -93,10 +86,10 @@ final class AdminController extends BaseApiController
         );
     }
 
-    public function getAdvisorDetails(int $advisorId): JsonResponse
+    public function getAdvisorDetails(int $advisorId, GetAdvisorDetailsAction $action): JsonResponse
     {
-        $details = $this->adminService->getAdvisorDetails($advisorId);
-
-        return (new AdvisorDetailResource($details))->response()->setStatusCode(200);
+        return $this->successResponse(
+            (new AdvisorDetailResource($action->execute($advisorId)))->resolve(),
+        );
     }
 }

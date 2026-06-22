@@ -15,10 +15,13 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * Authorization is handled by PensionSettingPolicy::bulkUpdate via
+     * $this->authorize('bulkUpdate', PensionSetting::class) in the controller.
      */
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('admin') ?? false;
+        return true;
     }
 
     /**

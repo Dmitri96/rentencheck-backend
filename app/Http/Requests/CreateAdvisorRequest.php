@@ -10,10 +10,12 @@ final class CreateAdvisorRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     *
+     * Role enforcement happens via the route middleware (role:admin).
      */
     public function authorize(): bool
     {
-        return $this->user()->hasRole('admin');
+        return true;
     }
 
     /**

@@ -46,7 +46,7 @@ it('lists rentenchecks for the advisor\'s own client', function (): void {
     $this->actingAs($advisor)
         ->getJson("/api/clients/{$client->id}/rentenchecks")
         ->assertOk()
-        ->assertJsonCount(2, 'data.data');
+        ->assertJsonCount(2, 'data.rentenchecks');
 });
 
 it('forbids listing rentenchecks for someone else\'s client (403 via policy)', function (): void {

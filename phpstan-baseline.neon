@@ -7,12 +7,6 @@ parameters:
 			path: app/Http/Controllers/Api/RentencheckController.php
 
 		-
-			message: '#^Parameter \#1 \$credentials of method App\\Services\\AuthService\:\:login\(\) expects array\{email\: string, password\: string, remember_me\?\: bool\}, array\<string, mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/AuthController.php
-
-		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\AdvisorResource\:\:\$completed_rentenchecks_count\.$#'
 			identifier: property.notFound
 			count: 2
@@ -46,10 +40,4 @@ parameters:
 			message: '#^Instanceof between Laravel\\Sanctum\\PersonalAccessToken and Laravel\\Sanctum\\PersonalAccessToken will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1
-			path: app/Services/AuthService.php
-
-		-
-			message: '#^Call to an undefined method App\\Models\\PensionSetting\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\PensionSetting\>\:\:update\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/PensionSettingsManagementService.php
+			path: app/Actions/Auth/LogoutAction.php
