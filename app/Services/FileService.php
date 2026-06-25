@@ -8,12 +8,9 @@ use App\Models\File;
 use App\Models\Rentencheck;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
-final class FileService
+class FileService
 {
     private const ASPECT_LABELS = [
         'availabilityDuringSavings' => 'Verfügbarkeit während der Ansparphase',
@@ -87,27 +84,6 @@ final class FileService
             'content' => $this->generatePdfContent($rentencheck),
             'filename' => $this->generatePdfFilename($rentencheck),
         ];
-    }
-
-    /**
-     * Create file from uploaded content
-     */
-    public function createFromUpload(
-        UploadedFile $uploadedFile,
-        Model $model,
-        int $userId,
-        string $type = 'document',
-        ?string $description = null,
-        bool $isPublic = false,
-    ): File {
-        return File::createFromUpload(
-            $uploadedFile,
-            $model,
-            $userId,
-            $type,
-            $description,
-            $isPublic,
-        );
     }
 
     /**
