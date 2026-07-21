@@ -30,7 +30,7 @@ class PensionSettingsSeeder extends Seeder
             [
                 'key' => 'additional_health_insurance_rate',
                 'category' => 'social_insurance',
-                'value' => 1.25,
+                'value' => 1.45,
                 'unit' => '%',
                 'description' => 'Additional health insurance contribution',
                 'description_de' => 'Zusatzbeitrag Krankenversicherung',
@@ -46,7 +46,7 @@ class PensionSettingsSeeder extends Seeder
             [
                 'key' => 'health_insurance_exemption_bav',
                 'category' => 'social_insurance',
-                'value' => 187.25,
+                'value' => 197.75,
                 'unit' => '€',
                 'description' => 'Health insurance exemption amount for occupational pension',
                 'description_de' => 'Freibetrag KV in der BAV',
@@ -78,82 +78,6 @@ class PensionSettingsSeeder extends Seeder
                 'description_de' => 'Angenommene jährliche Kapitalrendite',
             ],
 
-            // Tax Rates (important for net calculations)
-            [
-                'key' => 'tax_rate_stufe_1',
-                'category' => 'tax_brackets',
-                'value' => 0.00,
-                'unit' => '%',
-                'description' => 'Tax rate for bracket 1',
-                'description_de' => 'Steuersatz Stufe 1',
-            ],
-            [
-                'key' => 'tax_rate_stufe_2',
-                'category' => 'tax_brackets',
-                'value' => 14.00,
-                'unit' => '%',
-                'description' => 'Tax rate for bracket 2',
-                'description_de' => 'Steuersatz Stufe 2',
-            ],
-            [
-                'key' => 'tax_rate_stufe_3',
-                'category' => 'tax_brackets',
-                'value' => 24.00,
-                'unit' => '%',
-                'description' => 'Tax rate for bracket 3',
-                'description_de' => 'Steuersatz Stufe 3',
-            ],
-            [
-                'key' => 'tax_rate_stufe_4',
-                'category' => 'tax_brackets',
-                'value' => 42.00,
-                'unit' => '%',
-                'description' => 'Tax rate for bracket 4',
-                'description_de' => 'Steuersatz Stufe 4',
-            ],
-            [
-                'key' => 'tax_rate_stufe_5',
-                'category' => 'tax_brackets',
-                'value' => 45.00,
-                'unit' => '%',
-                'description' => 'Tax rate for bracket 5 (top rate)',
-                'description_de' => 'Steuersatz Stufe 5 (Spitzensteuersatz)',
-            ],
-
-            // Tax Thresholds (essential for bracket calculations)
-            [
-                'key' => 'tax_threshold_1',
-                'category' => 'tax_thresholds',
-                'value' => 12097.00,
-                'unit' => '€',
-                'description' => 'Tax bracket 1 threshold (basic allowance)',
-                'description_de' => 'Grundfreibetrag (Grenze Stufe 1)',
-            ],
-            [
-                'key' => 'tax_threshold_2',
-                'category' => 'tax_thresholds',
-                'value' => 17444.00,
-                'unit' => '€',
-                'description' => 'Tax bracket 2 threshold',
-                'description_de' => 'Grenze Stufe 2',
-            ],
-            [
-                'key' => 'tax_threshold_3',
-                'category' => 'tax_thresholds',
-                'value' => 68481.00,
-                'unit' => '€',
-                'description' => 'Tax bracket 3 threshold',
-                'description_de' => 'Grenze Stufe 3',
-            ],
-            [
-                'key' => 'tax_threshold_4',
-                'category' => 'tax_thresholds',
-                'value' => 277826.00,
-                'unit' => '€',
-                'description' => 'Tax bracket 4 threshold',
-                'description_de' => 'Grenze Stufe 4',
-            ],
-
             // Regional Tax Rates (useful for different states)
             [
                 'key' => 'church_tax_bavaria_bw',
@@ -182,11 +106,37 @@ class PensionSettingsSeeder extends Seeder
             [
                 'key' => 'solidarity_surcharge_threshold',
                 'category' => 'regional_taxes',
-                'value' => 19450.00,
+                'value' => 20350.00,
                 'unit' => '€',
                 'description' => 'Solidarity surcharge threshold (annual income tax)',
                 'description_de' => 'Solidaritätszuschlag Schwellenwert (jährliche Einkommensteuer)',
             ],
+
+            // Income tax §32a EStG tariff-zone parameters (assessment year 2025,
+            // Steuerfortentwicklungsgesetz). Must be refreshed each January.
+            ['key' => 'income_tax_zone1_end', 'category' => 'income_tax', 'value' => 12096.00, 'unit' => '€', 'description' => 'Basic tax-free allowance (Grundfreibetrag)', 'description_de' => 'Grundfreibetrag (Ende Zone 1)'],
+            ['key' => 'income_tax_zone2_end', 'category' => 'income_tax', 'value' => 17443.00, 'unit' => '€', 'description' => 'End of first progression zone', 'description_de' => 'Ende Progressionszone 1'],
+            ['key' => 'income_tax_zone3_end', 'category' => 'income_tax', 'value' => 68480.00, 'unit' => '€', 'description' => 'End of second progression zone', 'description_de' => 'Ende Progressionszone 2'],
+            ['key' => 'income_tax_zone4_end', 'category' => 'income_tax', 'value' => 277825.00, 'unit' => '€', 'description' => 'Start of top tax rate (Reichensteuer)', 'description_de' => 'Beginn Reichensteuer'],
+            ['key' => 'income_tax_zone2_factor', 'category' => 'income_tax', 'value' => 932.30, 'unit' => 'Koeff.', 'description' => '§32a zone 2 quadratic factor', 'description_de' => '§32a Zone 2 Progressionsfaktor'],
+            ['key' => 'income_tax_zone2_base', 'category' => 'income_tax', 'value' => 1400.00, 'unit' => 'Koeff.', 'description' => '§32a zone 2 base factor (14%)', 'description_de' => '§32a Zone 2 Eingangssatz-Faktor'],
+            ['key' => 'income_tax_zone3_factor', 'category' => 'income_tax', 'value' => 176.64, 'unit' => 'Koeff.', 'description' => '§32a zone 3 quadratic factor', 'description_de' => '§32a Zone 3 Progressionsfaktor'],
+            ['key' => 'income_tax_zone3_base', 'category' => 'income_tax', 'value' => 2397.00, 'unit' => 'Koeff.', 'description' => '§32a zone 3 base factor', 'description_de' => '§32a Zone 3 Basisfaktor'],
+            ['key' => 'income_tax_zone3_const', 'category' => 'income_tax', 'value' => 1015.13, 'unit' => '€', 'description' => '§32a zone 3 constant', 'description_de' => '§32a Zone 3 Konstante'],
+            ['key' => 'income_tax_zone4_rate', 'category' => 'income_tax', 'value' => 42.00, 'unit' => '%', 'description' => 'Marginal rate zone 4', 'description_de' => 'Spitzensteuersatz Zone 4'],
+            ['key' => 'income_tax_zone4_const', 'category' => 'income_tax', 'value' => 10911.92, 'unit' => '€', 'description' => '§32a zone 4 deduction constant', 'description_de' => '§32a Zone 4 Abzugskonstante'],
+            ['key' => 'income_tax_zone5_rate', 'category' => 'income_tax', 'value' => 45.00, 'unit' => '%', 'description' => 'Top marginal rate (Reichensteuer)', 'description_de' => 'Reichensteuersatz Zone 5'],
+            ['key' => 'income_tax_zone5_const', 'category' => 'income_tax', 'value' => 19246.67, 'unit' => '€', 'description' => '§32a zone 5 deduction constant', 'description_de' => '§32a Zone 5 Abzugskonstante'],
+            ['key' => 'werbungskosten_pauschbetrag', 'category' => 'income_tax', 'value' => 102.00, 'unit' => '€', 'description' => 'Flat allowance for pension-related expenses', 'description_de' => 'Werbungskosten-Pauschbetrag für Renteneinkünfte'],
+
+            // Taxable shares (nachgelagerte Besteuerung)
+            ['key' => 'statutory_pension_taxable_share', 'category' => 'taxable_shares', 'value' => 84.00, 'unit' => '%', 'description' => 'Taxable share of statutory pension for current retiree cohort (2026)', 'description_de' => 'Besteuerungsanteil gesetzliche Rente (Rentenbeginn 2026)'],
+
+            ['key' => 'statutory_pension_taxable_share_base_year', 'category' => 'taxable_shares', 'value' => 2026, 'unit' => 'Jahr', 'description' => 'Cohort year the taxable share value refers to (+0.5pp per later retirement year)', 'description_de' => 'Basisjahr des Besteuerungsanteils (+0,5 pp je späterem Rentenbeginn-Jahr)'],
+
+            // Additional social insurance parameters
+            ['key' => 'care_insurance_childless_surcharge', 'category' => 'social_insurance', 'value' => 0.60, 'unit' => '%', 'description' => 'Care insurance surcharge for childless members', 'description_de' => 'Pflegeversicherung Kinderlosen-Zuschlag'],
+            ['key' => 'bbg_health_monthly', 'category' => 'social_insurance', 'value' => 5812.50, 'unit' => '€', 'description' => 'Monthly health insurance contribution ceiling (BBG-KV)', 'description_de' => 'Beitragsbemessungsgrenze KV (monatlich)'],
 
             // Demographic defaults
             [
@@ -208,8 +158,7 @@ class PensionSettingsSeeder extends Seeder
         ];
 
         foreach ($settings as $setting) {
-            DB::table('pension_settings')->insert([
-                'key' => $setting['key'],
+            DB::table('pension_settings')->updateOrInsert(['key' => $setting['key']], [
                 'category' => $setting['category'],
                 'value' => $setting['value'],
                 'unit' => $setting['unit'],

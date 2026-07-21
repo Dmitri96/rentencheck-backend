@@ -8,98 +8,219 @@ use App\Models\Rentencheck;
 use App\Repositories\PensionSettingRepository;
 
 /**
- * Orchestrates the pension analysis pipeline.
+ * Orchestrates the pension analysis pipeline (MVP "Bild 0" + "Bild 3").
  *
- * Pulls settings from the repository, then delegates math to the pure
- * InflationProjector / NetIncomeCalculator collaborators.
+ * Per income source: Brutto(at retirement) → income tax (§32a on the
+ * aggregated taxable retirement income, allocated proportionally) → church
+ * tax / Soli (on the tax) → KV/PV per insurance matrix → purchasing power
+ * (discounted by inflation). Then gap, capital requirement and the
+ * disability scenario. Golden-master tests lock the output.
  */
 final class PensionCalculator
 {
-    /**
-     * Final fallback if the admin has not configured `life_expectancy` in the
-     * pension settings table. Reflects current German actuarial averages.
-     */
     private const DEFAULT_LIFE_EXPECTANCY = 85;
 
     public function __construct(
         private readonly PensionSettingRepository $settings,
         private readonly InflationProjector $inflation,
-        private readonly NetIncomeCalculator $netIncome,
+        private readonly IncomeSourceClassifier $classifier,
+        private readonly IncomeTaxCalculator $tax,
+        private readonly SocialInsuranceCalculator $insurance,
+        private readonly CapitalRequirementCalculator $capital,
+        private readonly DisabilityScenarioCalculator $disability,
     ) {}
 
     /**
-     * Produce the chart-shaped analysis for a single rentencheck.
-     *
-     * Output structure is part of the public API consumed by the frontend
-     * pension chart; golden-master tests lock the keys + values.
-     *
      * @return array<string, mixed>
      */
     public function analyze(Rentencheck $rentencheck): array
     {
+        $step1 = $rentencheck->step_1_data ?? [];
         $step2 = $rentencheck->step_2_data ?? [];
         $step3 = $rentencheck->step_3_data ?? [];
 
-        $assumptions = $this->settings->getEconomicAssumptions();
-        $inflationPct = $assumptions['inflation_rate'];
-        $totalInsuranceRate = $this->settings->getTotalInsuranceRate();
+        $economic = $this->settings->getEconomicAssumptions();
+        $rates = $this->settings->getSocialInsuranceRates();
+        $taxParams = $this->settings->getIncomeTaxParameters();
 
         $currentAge = (int) ($step2['currentAge'] ?? 30);
         $retirementAge = (int) ($step2['retirementAge'] ?? 67);
-        // Read life expectancy from settings so admin tweaks affect both the math AND parameters_used.
         $lifeExpectancy = (int) ($this->settings->getValue('life_expectancy') ?? self::DEFAULT_LIFE_EXPECTANCY);
-        $yearsToRetirement = $retirementAge - $currentAge;
+        $yearsToRetirement = max(0, $retirementAge - $currentAge);
+        // Besteuerungsanteil depends on the client's retirement-year cohort (AltEinkG).
+        $statutoryShare = $this->settings->getStatutoryTaxableShare((int) date('Y') + $yearsToRetirement);
+        // Client-specific inflation assumption overrides the admin default (decision 5).
+        $inflationPct = (float) ($step2['assumedInflation'] ?? 0) > 0
+            ? (float) $step2['assumedInflation']
+            : $economic['inflation_rate'];
+        $endAge = (int) ($step2['provisionDuration'] ?? 0) > $retirementAge
+            ? (int) $step2['provisionDuration']
+            : $lifeExpectancy;
 
-        // Desired pension projection
+        $healthStatus = (string) ($step1['healthInsurance'] ?? 'Gesetzlich/PflichtV');
+        $isChildless = ($step1['hasChildren'] ?? true) === false;
+        $churchLiable = (bool) ($step1['hasToChurchTax'] ?? false);
+        $churchRate = in_array($step1['federalState'] ?? '', ['Bayern', 'Baden-Württemberg'], true)
+            ? (float) ($this->settings->getValue('church_tax_bavaria_bw') ?? 8.0)
+            : (float) ($this->settings->getValue('church_tax_other_states') ?? 9.0);
+
+        $sources = $this->classifier->classify($step3, [
+            'retirementAge' => $retirementAge,
+            'yearsToRetirement' => $yearsToRetirement,
+            'retirementYears' => max(1, $endAge - $retirementAge),
+            'pensionIncreasePct' => $economic['pension_increase_rate'],
+            'investmentReturnPct' => $economic['investment_return_rate'],
+            'statutoryTaxableShare' => $statutoryShare,
+        ]);
+
+        $rows = $this->buildRows($sources, $taxParams, $rates, $healthStatus, $isChildless, $churchLiable, $churchRate, $inflationPct, $yearsToRetirement);
+        $totals = $this->sumRows($rows);
+
+        // Privately insured clients pay their PKV premium out of the pension income.
+        $pkv = $this->privateHealthInsurance($step1, $healthStatus, $inflationPct, $yearsToRetirement);
+        $availablePurchasingPower = $totals['purchasing_power'] - $pkv['purchasing_power'];
+
         $desiredToday = (float) ($step2['pensionWishCurrentValue'] ?? 0);
-        $desiredRetirement = $this->inflation->projectFuture($desiredToday, $inflationPct, $yearsToRetirement);
-        $desiredLifeExpectancy = $this->inflation->projectFuture(
-            $desiredToday,
-            $inflationPct,
-            $lifeExpectancy - $currentAge,
-        );
-
-        // Contract-derived current pension components
-        $legalToday = $this->extractLegalPension($step3);
-        $privateToday = $this->extractPrivatePension($step3);
-        $bavToday = $this->extractBavRiester($step3);
-
-        $legalRetirement = $this->inflation->projectFuture($legalToday, $inflationPct, $yearsToRetirement);
-        $privateRetirement = $this->inflation->projectFuture($privateToday, $inflationPct, $yearsToRetirement);
-        $bavRetirement = $this->inflation->projectFuture($bavToday, $inflationPct, $yearsToRetirement);
-
-        // Statutory pension after insurance, discounted to today's purchasing power
-        $statutoryGross = (float) ($step3['statutoryPensionAmount'] ?? 0);
-        $statutoryAfterInsurance = $this->netIncome->statutoryAfterInsurance($statutoryGross, $totalInsuranceRate);
-        $statutoryPurchasingPower = $this->inflation->projectPurchasingPower(
-            $statutoryAfterInsurance,
-            $inflationPct,
-            $yearsToRetirement,
-        );
+        $gapToday = max(0.0, $desiredToday - $availablePurchasingPower);
+        $gapAtRetirement = $this->inflation->projectFuture($gapToday, $inflationPct, $yearsToRetirement);
 
         return [
             'currentAge' => $currentAge,
-            'inflationRate' => $inflationPct,
             'retirementAge' => $retirementAge,
             'lifeExpectancy' => $lifeExpectancy,
+            'provisionEndAge' => $endAge,
+            'inflationRate' => $inflationPct,
 
-            'desiredPensionToday' => $desiredToday,
-            'desiredPensionRetirement' => $desiredRetirement,
-            'desiredPensionLifeExpectancy' => $desiredLifeExpectancy,
+            'rows' => $rows,
+            'totals' => $totals,
+            'private_health_insurance' => $pkv,
 
-            'legalPensionToday' => $legalToday,
-            'legalPensionRetirement' => $legalRetirement,
-            'statutoryPensionGross' => $statutoryGross,
-            'statutoryPensionAfterInsurance' => $statutoryAfterInsurance,
-            'statutoryPensionPurchasingPower' => $statutoryPurchasingPower,
-
-            'privatePensionToday' => $privateToday,
-            'privatePensionRetirement' => $privateRetirement,
-
-            'bavRiesterToday' => $bavToday,
-            'bavRiesterRetirement' => $bavRetirement,
+            'desired_pension' => [
+                'today' => round($desiredToday, 2),
+                'at_retirement' => round($this->inflation->projectFuture($desiredToday, $inflationPct, $yearsToRetirement), 2),
+            ],
+            'gap' => [
+                'monthly_today' => round($gapToday, 2),
+                'monthly_at_retirement' => round($gapAtRetirement, 2),
+                'annual_at_retirement' => round($gapAtRetirement * 12, 2),
+            ],
+            'capital' => $this->capital->analyze($gapAtRetirement, $inflationPct, $economic['investment_return_rate'], $retirementAge, $endAge),
+            'disability' => $this->disability->analyze(
+                (float) ($step1['currentGrossIncome'] ?? 0),
+                (float) ($step1['currentNetIncome'] ?? 0),
+                (float) ($step3['disabilityPensionAmount'] ?? 0),
+                (float) ($step3['privateDisabilityInsuranceAmount'] ?? 0),
+                // EM-Rente starts now, so it is taxed with the CURRENT cohort share.
+                $this->settings->getStatutoryTaxableShare((int) date('Y')),
+                $rates['bbg_health_monthly'],
+                $rates,
+                $taxParams,
+                $healthStatus,
+                $isChildless,
+            ),
 
             'parameters_used' => $this->parameters(),
+        ];
+    }
+
+    /**
+     * @param  list<IncomeSource>  $sources
+     * @param  array<string, float>  $taxParams
+     * @param  array<string, float>  $rates
+     * @return list<array<string, mixed>>
+     */
+    private function buildRows(
+        array $sources,
+        array $taxParams,
+        array $rates,
+        string $healthStatus,
+        bool $isChildless,
+        bool $churchLiable,
+        float $churchRate,
+        float $inflationPct,
+        int $yearsToRetirement,
+    ): array {
+        // §32a applies to the aggregated taxable retirement income, then the tax
+        // is allocated back to the rows in proportion to their taxable amounts.
+        $annualTaxableTotal = 0.0;
+        foreach ($sources as $source) {
+            $annualTaxableTotal += $source->grossAtRetirement * 12 * $source->taxableShare;
+        }
+        $zvE = max(0.0, $annualTaxableTotal - $taxParams['werbungskosten_pauschbetrag']);
+        $annualTax = $this->tax->annualIncomeTax($zvE, $taxParams);
+        $annualChurch = $this->tax->churchTax($annualTax, $churchLiable, $churchRate);
+        $soliFreigrenze = (float) ($this->settings->getValue('solidarity_surcharge_threshold') ?? 20350.0);
+        $soliRate = (float) ($this->settings->getValue('solidarity_surcharge_rate') ?? 5.5);
+        $annualSoli = $this->tax->solidaritySurcharge($annualTax, $soliFreigrenze, $soliRate);
+
+        $rows = [];
+        foreach ($sources as $source) {
+            $taxWeight = $annualTaxableTotal > 0
+                ? ($source->grossAtRetirement * 12 * $source->taxableShare) / $annualTaxableTotal
+                : 0.0;
+            $incomeTax = $annualTax * $taxWeight / 12;
+            $church = $annualChurch * $taxWeight / 12;
+            $soli = $annualSoli * $taxWeight / 12;
+            $afterTax = $source->grossAtRetirement - $incomeTax - $church - $soli;
+            $insurance = $this->insurance->monthlyDeduction($source, $rates, $healthStatus, $isChildless);
+            $afterInsurance = $afterTax - $insurance;
+            $purchasingPower = $this->inflation->projectPurchasingPower($afterInsurance, $inflationPct, $yearsToRetirement);
+
+            $rows[] = [
+                'key' => $source->key,
+                'label' => $source->label,
+                'group' => $source->group,
+                'gross_today' => round($source->grossToday, 2),
+                'gross_at_retirement' => round($source->grossAtRetirement, 2),
+                'taxable_share' => round($source->taxableShare * 100, 1),
+                'income_tax' => round($incomeTax, 2),
+                'church_tax' => round($church, 2),
+                'solidarity_surcharge' => round($soli, 2),
+                'after_tax' => round($afterTax, 2),
+                'health_care_insurance' => round($insurance, 2),
+                'after_insurance' => round($afterInsurance, 2),
+                'purchasing_power' => round($purchasingPower, 2),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return array<string, float>
+     */
+    private function sumRows(array $rows): array
+    {
+        $keys = ['gross_at_retirement', 'income_tax', 'church_tax', 'solidarity_surcharge',
+            'after_tax', 'health_care_insurance', 'after_insurance', 'purchasing_power'];
+        $totals = array_fill_keys($keys, 0.0);
+        foreach ($rows as $row) {
+            foreach ($keys as $key) {
+                $totals[$key] = round($totals[$key] + $row[$key], 2);
+            }
+        }
+
+        return $totals;
+    }
+
+    /**
+     * @param  array<string, mixed>  $step1
+     * @return array<string, float>
+     */
+    private function privateHealthInsurance(array $step1, string $healthStatus, float $inflationPct, int $years): array
+    {
+        if (! $this->insurance->isPrivatelyInsured($healthStatus)) {
+            return ['monthly_today' => 0.0, 'monthly_at_retirement' => 0.0, 'purchasing_power' => 0.0];
+        }
+
+        $today = (float) ($step1['healthInsuranceContribution'] ?? 0);
+        $atRetirement = $this->inflation->projectFuture($today, $inflationPct, $years);
+
+        return [
+            'monthly_today' => round($today, 2),
+            'monthly_at_retirement' => round($atRetirement, 2),
+            'purchasing_power' => round($this->inflation->projectPurchasingPower($atRetirement, $inflationPct, $years), 2),
         ];
     }
 
@@ -113,26 +234,21 @@ final class PensionCalculator
     {
         $economic = $this->settings->getEconomicAssumptions();
         $insurance = $this->settings->getSocialInsuranceRates();
-        $taxBrackets = $this->settings->getTaxBrackets();
+        $taxParams = $this->settings->getIncomeTaxParameters();
 
         return [
-            'economic_assumptions' => [
-                'inflation_rate' => $economic['inflation_rate'],
-                'pension_increase_rate' => $economic['pension_increase_rate'],
-                'investment_return_rate' => $economic['investment_return_rate'],
-            ],
+            'economic_assumptions' => $economic,
             'social_insurance' => [
-                'health_insurance_rate' => $insurance['health_insurance_rate'],
-                'additional_health_insurance_rate' => $insurance['additional_health_insurance_rate'],
-                'care_insurance_rate' => $insurance['care_insurance_rate'],
+                ...$insurance,
                 'total_insurance_rate' => $this->settings->getTotalInsuranceRate() * 100,
-                'health_insurance_exemption_bav' => $insurance['health_insurance_exemption_bav'],
             ],
             'tax_system' => [
-                'rates' => $taxBrackets['rates'],
-                'thresholds' => $taxBrackets['thresholds'],
+                'income_tax_zones' => $taxParams,
+                // Base cohort value; the engine derives the client's share from the retirement year.
+                'statutory_pension_taxable_share' => (float) ($this->settings->getValue('statutory_pension_taxable_share') ?? 84.0),
+                'statutory_pension_taxable_share_base_year' => (int) ($this->settings->getValue('statutory_pension_taxable_share_base_year') ?? 2026),
                 'solidarity_surcharge_rate' => (float) ($this->settings->getValue('solidarity_surcharge_rate') ?? 5.5),
-                'solidarity_surcharge_threshold' => (float) ($this->settings->getValue('solidarity_surcharge_threshold') ?? 19450.0),
+                'solidarity_surcharge_threshold' => (float) ($this->settings->getValue('solidarity_surcharge_threshold') ?? 20350.0),
             ],
             'regional_taxes' => [
                 'church_tax_bavaria_bw' => (float) ($this->settings->getValue('church_tax_bavaria_bw') ?? 8.0),
@@ -143,85 +259,5 @@ final class PensionCalculator
                 'life_expectancy' => (int) ($this->settings->getValue('life_expectancy') ?? self::DEFAULT_LIFE_EXPECTANCY),
             ],
         ];
-    }
-
-    /**
-     * Sum of contracts identified as legal/statutory pension entries from
-     * step 3 data. Returns 0 when statutory claims aren't asserted.
-     *
-     * Match is strict "gesetzlich" — a previous `rente` substring fallback
-     * also matched "Privatrente" and double-counted it across legal + private
-     * columns of the advisor's chart.
-     */
-    /**
-     * @param  array<string, mixed>  $step3
-     */
-    private function extractLegalPension(array $step3): float
-    {
-        if (! ($step3['statutoryPensionClaims'] ?? false)) {
-            return 0.0;
-        }
-
-        $total = 0.0;
-        foreach ($step3['pensionContracts'] ?? [] as $contract) {
-            $type = strtolower((string) ($contract['type'] ?? ''));
-            if (str_contains($type, 'gesetzlich')) {
-                $total += (float) ($contract['amount'] ?? 0);
-            }
-        }
-
-        return $total;
-    }
-
-    /**
-     * Sum of contracts identified as private pension entries from step 3 data.
-     */
-    /**
-     * @param  array<string, mixed>  $step3
-     */
-    private function extractPrivatePension(array $step3): float
-    {
-        $total = 0.0;
-        foreach ($step3['pensionContracts'] ?? [] as $contract) {
-            $type = strtolower((string) ($contract['type'] ?? ''));
-            if (
-                ! str_contains($type, 'gesetzlich')
-                && ! str_contains($type, 'riester')
-                && ! str_contains($type, 'bav')
-                && ! str_contains($type, 'betrieblich')
-            ) {
-                $total += (float) ($contract['amount'] ?? 0);
-            }
-        }
-
-        return $total;
-    }
-
-    /**
-     * Sum of BAV / Riester contracts from step 3 data. Returns 0 when
-     * professional provision isn't asserted.
-     */
-    /**
-     * @param  array<string, mixed>  $step3
-     */
-    private function extractBavRiester(array $step3): float
-    {
-        if (! ($step3['professionalProvisionWorks'] ?? false)) {
-            return 0.0;
-        }
-
-        $total = 0.0;
-        foreach ($step3['pensionContracts'] ?? [] as $contract) {
-            $type = strtolower((string) ($contract['type'] ?? ''));
-            if (
-                str_contains($type, 'riester')
-                || str_contains($type, 'bav')
-                || str_contains($type, 'betrieblich')
-            ) {
-                $total += (float) ($contract['amount'] ?? 0);
-            }
-        }
-
-        return $total;
     }
 }

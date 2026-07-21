@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Admin;
 
+use App\Enums\RentencheckStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -25,7 +26,7 @@ final readonly class ListAdvisorsAction
     {
         $query = User::advisors()
             ->withCount(['clients', 'clients as completed_rentenchecks_count' => function (Builder $q): void {
-                $q->whereHas('rentenchecks', fn (Builder $r) => $r->where('status', 'completed'));
+                $q->whereHas('rentenchecks', fn (Builder $r) => $r->where('status', RentencheckStatus::Completed));
             }])
             ->with(['clients' => fn ($q) => $q->withCount('rentenchecks')]);
 

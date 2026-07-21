@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\RentencheckStatus;
 use App\Services\Rentenchecks\RentencheckStepValidator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $user_id
  * @property int $client_id
- * @property string $status
+ * @property RentencheckStatus $status
  * @property string|null $title
  * @property string|null $notes
  * @property array<int, int> $completed_steps
@@ -60,17 +61,27 @@ class Rentencheck extends Model
         'step_3_data',
         'step_4_data',
         'step_5_data',
+        'analysis_snapshot',
     ];
 
     protected $casts = [
+        'status' => RentencheckStatus::class,
         'completed_steps' => 'array',
         'step_1_data' => 'array',
         'step_2_data' => 'array',
         'step_3_data' => 'array',
         'step_4_data' => 'array',
         'step_5_data' => 'array',
+        'analysis_snapshot' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+    ];
+
+    // Computed attributes the frontend reads on list/detail payloads (toArray()
+    // omits accessors unless appended).
+    protected $appends = [
+        'progress_percentage',
+        'is_complete',
     ];
 
     /**
@@ -191,6 +202,14 @@ class Rentencheck extends Model
      */
     public function getProgressPercentageAttribute(): int
     {
+        // A completed rentencheck is fully done regardless of how many step
+        // confirmations were recorded — step 5 (Abschluss) is optional, so
+        // completion can happen at 4/5 confirmed steps. Reporting 100% keeps the
+        // progress bar consistent with the "completed" status badge.
+        if ($this->status === RentencheckStatus::Completed) {
+            return 100;
+        }
+
         $totalSteps = 5;
         $completedSteps = count($this->completed_steps ?? []);
 
@@ -257,6 +276,9 @@ class Rentencheck extends Model
     {
         $stepField = "step_{$step}_data";
         $this->$stepField = $data;
+        // Any data change invalidates the frozen completion snapshot — it is
+        // re-taken when the rentencheck is completed again.
+        $this->analysis_snapshot = null;
 
         if (app(RentencheckStepValidator::class)->isComplete($step, $data)) {
             $this->completeStep($step);

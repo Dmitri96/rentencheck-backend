@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Actions\Contracts\CalculateTotalPensionValueAction;
 use App\Actions\Contracts\GetContractsByCategoryAction;
 use App\Actions\Contracts\UpdateContractsForStepAction;
 use App\Actions\Contracts\ValidateContractDataAction;
@@ -59,7 +58,6 @@ final class RentencheckController extends BaseApiController
         int $clientId,
         int $rentencheckId,
         GetContractsByCategoryAction $getContractsAction,
-        CalculateTotalPensionValueAction $calculatePensionTotalsAction,
     ): JsonResponse {
         $rentencheck = Rentencheck::with(['client', 'contracts'])
             ->where('client_id', $clientId)
@@ -69,7 +67,6 @@ final class RentencheckController extends BaseApiController
         return $this->successResponse([
             'rentencheck' => $rentencheck->toArray(),
             'contracts' => $getContractsAction->execute($rentencheck),
-            'pension_totals' => $calculatePensionTotalsAction->execute($rentencheck),
             'client' => $rentencheck->client->toArray(),
         ]);
     }
@@ -226,7 +223,6 @@ final class RentencheckController extends BaseApiController
         int $clientId,
         int $rentencheckId,
         PensionCalculator $pensionCalculator,
-        CalculateTotalPensionValueAction $calculatePensionTotalsAction,
     ): JsonResponse {
         $rentencheck = Rentencheck::with(['client', 'contracts'])
             ->where('client_id', $clientId)
@@ -235,8 +231,9 @@ final class RentencheckController extends BaseApiController
 
         return $this->successResponse(
             [
-                'pension_data' => $pensionCalculator->analyze($rentencheck),
-                'pension_totals' => $calculatePensionTotalsAction->execute($rentencheck),
+                // Completed rentenchecks serve the frozen completion snapshot so the
+                // on-screen analysis always matches the issued PDF.
+                'pension_data' => $rentencheck->analysis_snapshot ?? $pensionCalculator->analyze($rentencheck),
                 'client' => $rentencheck->client->toArray(),
             ],
             'Rentenberechnung erfolgreich durchgeführt',

@@ -34,7 +34,7 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
         return [
             'settings' => 'required|array|min:1',
             'settings.*.id' => 'required|integer|exists:pension_settings,id',
-            'settings.*.value' => 'required|numeric|min:0|max:1000',
+            'settings.*.value' => 'required|numeric|min:0|max:1000000',
         ];
     }
 
@@ -55,7 +55,7 @@ class BulkUpdatePensionSettingsRequest extends FormRequest
             'settings.*.value.required' => 'Der Wert ist erforderlich.',
             'settings.*.value.numeric' => 'Der Wert muss eine Zahl sein.',
             'settings.*.value.min' => 'Der Wert muss mindestens 0 betragen.',
-            'settings.*.value.max' => 'Der Wert darf maximal 1000 betragen.',
+            'settings.*.value.max' => 'Der Wert darf maximal 1.000.000 betragen.',
         ];
     }
 

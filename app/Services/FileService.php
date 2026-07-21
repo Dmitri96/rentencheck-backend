@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Calculators\PensionCalculator;
 use App\Models\File;
 use App\Models\Rentencheck;
 use Dompdf\Dompdf;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 class FileService
 {
+    public function __construct(
+        private readonly PensionCalculator $calculator,
+    ) {}
+
     private const ASPECT_LABELS = [
         'availabilityDuringSavings' => 'Verfügbarkeit während der Ansparphase',
         'flexibilityInRetirement' => 'Flexibilität in der Rentenphase',
@@ -129,9 +134,15 @@ class FileService
 
         $dompdf = new Dompdf($options);
 
+        // The completion snapshot pins the numbers of an issued report;
+        // drafts (on-the-fly downloads) are computed with current settings.
+        $analysis = $rentencheck->analysis_snapshot ?? $this->calculator->analyze($rentencheck);
+
         $html = view('pdf.rentencheck', [
             'rentencheck' => $rentencheck,
             'client' => $rentencheck->client,
+            'advisor' => $rentencheck->user,
+            'analysis' => $analysis,
             'aspectLabels' => self::ASPECT_LABELS,
         ])->render();
 

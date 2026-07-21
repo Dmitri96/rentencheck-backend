@@ -63,9 +63,11 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'currentNetIncome' => 'required|numeric|min:0',
             'maritalStatus' => 'required|string',
             'assetSeparation' => 'required|string',
-            'healthInsurance' => 'required|string',
+            'healthInsurance' => 'required|string|in:Gesetzlich/PflichtV,Gesetzlich/FamilienV,Gesetzlich/Freiwillig,Privat,Beihilfe,Freie Heilfürsorge',
             'healthInsuranceContribution' => 'required|numeric|min:0',
             'hasToChurchTax' => 'nullable|boolean',
+            'federalState' => 'nullable|string|max:50',
+            'hasChildren' => 'nullable|boolean',
         ];
     }
 
@@ -78,7 +80,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
     {
         return [
             'currentAge' => 'required|integer|min:18|max:100',
-            'retirementAge' => 'required|integer|min:50|max:100',
+            'retirementAge' => 'required|integer|min:50|max:100|gt:currentAge',
             'pensionWishCurrentValue' => 'required|numeric|min:0',
             'guaranteedAmount' => 'required|numeric|min:0',
             'provisionDuration' => 'required|integer|min:0',
@@ -100,6 +102,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'statutoryPensionAmount' => 'nullable|numeric|min:0',
             // New: Erwerbsminderungsrente (monatl. Betrag ohne Alter)
             'disabilityPensionAmount' => 'nullable|numeric|min:0',
+            // Private Berufsunfähigkeitsrente shown alongside the EMR bar in the BU diagram
+            'privateDisabilityInsuranceAmount' => 'nullable|numeric|min:0',
 
             'professionalProvisionWorks' => 'required|boolean',
             'professionalProvisionAge' => 'nullable|integer|min:0|max:100',
@@ -114,7 +118,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'civilServiceProvisionAmount' => 'nullable|numeric|min:0',
 
             // Payout contracts with comprehensive fields
-            'payoutContracts' => 'array',
+            'payoutContracts' => 'array|max:5',
             'payoutContracts.*.contract' => 'required_with:payoutContracts.*|string|max:255',
             'payoutContracts.*.company' => 'required_with:payoutContracts.*|string|max:255',
             'payoutContracts.*.contractType' => 'required_with:payoutContracts.*|string|in:Kapital-Lebensvers.,Rentenvers.,Direktvers.,Investment,andere Art',
@@ -124,18 +128,20 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'payoutContracts.*.projectedAmount' => 'nullable|numeric|min:0',
 
             // Pension contracts with comprehensive fields
-            'pensionContracts' => 'array',
+            'pensionContracts' => 'array|max:5',
             'pensionContracts.*.contract' => 'required_with:pensionContracts.*|string|max:255',
             'pensionContracts.*.company' => 'required_with:pensionContracts.*|string|max:255',
-            'pensionContracts.*.contractType' => 'required_with:pensionContracts.*|string|in:Basis-Rente,Riester-Rente,BAV-Rente,Mieteinnahme,andere Art',
+            'pensionContracts.*.contractType' => 'required_with:pensionContracts.*|string|in:Basis-Rente,Riester-Rente,BAV-Rente,Private Rentenvers.,Mieteinnahme,andere Art',
             'pensionContracts.*.interestRate' => 'required_with:pensionContracts.*|numeric|min:0|max:20',
             'pensionContracts.*.pensionStartYear' => 'required_with:pensionContracts.*|integer|min:2024|max:2100',
             'pensionContracts.*.guaranteedAmount' => 'nullable|numeric|min:0',
             'pensionContracts.*.projectedAmount' => 'nullable|numeric|min:0',
             'pensionContracts.*.monthlyAmount' => 'required_with:pensionContracts.*|numeric|min:0',
+            // Pre-2005 bAV contracts are taxed on a flat basis and are KV-free (Excel row 22)
+            'pensionContracts.*.isPre2005' => 'nullable|boolean',
 
             // Additional income with comprehensive fields
-            'additionalIncome' => 'array',
+            'additionalIncome' => 'array|max:5',
             'additionalIncome.*.type' => 'required_with:additionalIncome.*|string|max:255',
             'additionalIncome.*.startYear' => 'required_with:additionalIncome.*|integer|min:2024|max:2100',
             'additionalIncome.*.amount' => 'required_with:additionalIncome.*|numeric|min:0',
@@ -206,6 +212,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'healthInsuranceContribution.required' => 'Der Krankenversicherungsbeitrag ist erforderlich.',
             'healthInsuranceContribution.numeric' => 'Der Krankenversicherungsbeitrag muss eine Zahl sein.',
             'healthInsuranceContribution.min' => 'Der Krankenversicherungsbeitrag muss mindestens 0 sein.',
+            'federalState.max' => 'Das Bundesland darf maximal 50 Zeichen lang sein.',
 
             // Step 2 messages
             'currentAge.required' => 'Das aktuelle Alter ist erforderlich.',
@@ -216,6 +223,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'retirementAge.integer' => 'Das Rentenalter muss eine ganze Zahl sein.',
             'retirementAge.min' => 'Das Rentenalter muss mindestens 50 Jahre betragen.',
             'retirementAge.max' => 'Das Rentenalter darf maximal 100 Jahre betragen.',
+            'retirementAge.gt' => 'Renteneintrittsalter muss über dem aktuellen Alter liegen.',
             'pensionWishCurrentValue.required' => 'Der Rentenwunsch in heutiger Kaufkraft ist erforderlich.',
             'pensionWishCurrentValue.numeric' => 'Der Rentenwunsch muss eine Zahl sein.',
             'pensionWishCurrentValue.min' => 'Der Rentenwunsch muss mindestens 0 sein.',
@@ -239,6 +247,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'statutoryPensionAmount.min' => 'Der Betrag für gesetzliche Rente muss mindestens 0 sein.',
             'disabilityPensionAmount.numeric' => 'Der Betrag für Erwerbsminderungsrente muss eine Zahl sein.',
             'disabilityPensionAmount.min' => 'Der Betrag für Erwerbsminderungsrente muss mindestens 0 sein.',
+            'privateDisabilityInsuranceAmount.numeric' => 'Der Betrag für die private BU-Rente muss eine Zahl sein.',
+            'privateDisabilityInsuranceAmount.min' => 'Der Betrag für die private BU-Rente muss mindestens 0 sein.',
 
             'professionalProvisionWorks.required' => 'Die Angabe zur betrieblichen Altersvorsorge ist erforderlich.',
             'professionalProvisionAge.integer' => 'Das Alter für betriebliche Altersvorsorge muss eine ganze Zahl sein.',
@@ -262,6 +272,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'civilServiceProvisionAmount.min' => 'Der Betrag für Beamtenversorgung muss mindestens 0 sein.',
 
             // Payout contract messages
+            'payoutContracts.max' => 'Es sind maximal 5 Auszahlungsverträge erlaubt.',
             'payoutContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
             'payoutContracts.*.contract.max' => 'Der Vertragsname darf maximal 255 Zeichen lang sein.',
             'payoutContracts.*.company.required_with' => 'Die Gesellschaft ist erforderlich.',
@@ -283,6 +294,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'payoutContracts.*.projectedAmount.min' => 'Der prognostizierte Betrag muss mindestens 0 sein.',
 
             // Pension contract messages
+            'pensionContracts.max' => 'Es sind maximal 5 Rentenverträge erlaubt.',
             'pensionContracts.*.contract.required_with' => 'Der Vertragsname ist erforderlich.',
             'pensionContracts.*.contract.max' => 'Der Vertragsname darf maximal 255 Zeichen lang sein.',
             'pensionContracts.*.company.required_with' => 'Die Gesellschaft ist erforderlich.',
@@ -307,6 +319,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'pensionContracts.*.monthlyAmount.min' => 'Der monatliche Betrag muss mindestens 0 sein.',
 
             // Additional income messages
+            'additionalIncome.max' => 'Es sind maximal 5 zusätzliche Einkünfte erlaubt.',
             'additionalIncome.*.type.required_with' => 'Der Einkommenstyp ist erforderlich.',
             'additionalIncome.*.type.max' => 'Der Einkommenstyp darf maximal 255 Zeichen lang sein.',
             'additionalIncome.*.startYear.required_with' => 'Das Startjahr ist erforderlich.',
@@ -360,6 +373,8 @@ final class UpdateRentencheckStepRequest extends FormRequest
             'healthInsurance' => 'Krankenversicherung',
             'healthInsuranceContribution' => 'Krankenversicherungsbeitrag',
             'hasToChurchTax' => 'Kirchensteuerpflicht',
+            'federalState' => 'Bundesland',
+            'hasChildren' => 'Kinder',
 
             // Step 2 attributes
             'currentAge' => 'Aktuelles Alter',
@@ -372,6 +387,7 @@ final class UpdateRentencheckStepRequest extends FormRequest
             // Step 3 attributes
             'statutoryPensionClaims' => 'Gesetzliche Rentenansprüche',
             'disabilityPensionAmount' => 'Erwerbsminderungsrente (monatlich)',
+            'privateDisabilityInsuranceAmount' => 'Private BU-Rente (monatlich)',
             'professionalProvisionWorks' => 'Betriebliche Altersvorsorge',
             'publicServiceAdditionalProvision' => 'Öffentlich-rechtliche Zusatzversorgung',
             'civilServiceProvision' => 'Beamtenversorgung',

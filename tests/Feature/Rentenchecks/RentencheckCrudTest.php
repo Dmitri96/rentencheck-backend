@@ -79,7 +79,7 @@ it('shows a rentencheck with contracts + pension totals', function (): void {
         ->getJson("/api/clients/{$client->id}/rentenchecks/{$rc->id}")
         ->assertOk()
         ->assertJsonStructure([
-            'data' => ['rentencheck', 'contracts', 'pension_totals', 'client'],
+            'data' => ['rentencheck', 'contracts', 'client'],
         ]);
 });
 

@@ -1,20 +1,110 @@
 {
     "currentAge": 30,
-    "inflationRate": 2,
     "retirementAge": 65,
     "lifeExpectancy": 85,
-    "desiredPensionToday": 5000,
-    "desiredPensionRetirement": 9999.447763312282,
-    "desiredPensionLifeExpectancy": 14858.653365115471,
-    "legalPensionToday": 0,
-    "legalPensionRetirement": 0,
-    "statutoryPensionGross": 1100,
-    "statutoryPensionAfterInsurance": 966.35,
-    "statutoryPensionPurchasingPower": 483.20168416975656,
-    "privatePensionToday": 400,
-    "privatePensionRetirement": 799.9558210649826,
-    "bavRiesterToday": 700,
-    "bavRiesterRetirement": 1399.9226868637195,
+    "provisionEndAge": 85,
+    "inflationRate": 2,
+    "rows": [
+        {
+            "key": "statutory",
+            "label": "Gesetzl. Versorgung (inkl. Rentensteigerung)",
+            "group": "statutory",
+            "gross_today": 1100,
+            "gross_at_retirement": 1558.26,
+            "taxable_share": 100,
+            "income_tax": 206.41,
+            "church_tax": 0,
+            "solidarity_surcharge": 0,
+            "after_tax": 1351.86,
+            "health_care_insurance": 192.45,
+            "after_insurance": 1159.41,
+            "purchasing_power": 579.74
+        },
+        {
+            "key": "contract_0",
+            "label": "BAV (neu)",
+            "group": "occupational",
+            "gross_today": 500,
+            "gross_at_retirement": 500,
+            "taxable_share": 100,
+            "income_tax": 66.23,
+            "church_tax": 0,
+            "solidarity_surcharge": 0,
+            "after_tax": 433.77,
+            "health_care_insurance": 70.89,
+            "after_insurance": 362.88,
+            "purchasing_power": 181.45
+        },
+        {
+            "key": "contract_1",
+            "label": "Riester-Rente",
+            "group": "private",
+            "gross_today": 200,
+            "gross_at_retirement": 200,
+            "taxable_share": 100,
+            "income_tax": 26.49,
+            "church_tax": 0,
+            "solidarity_surcharge": 0,
+            "after_tax": 173.51,
+            "health_care_insurance": 0,
+            "after_insurance": 173.51,
+            "purchasing_power": 86.76
+        },
+        {
+            "key": "contract_2",
+            "label": "Private Rente",
+            "group": "private",
+            "gross_today": 400,
+            "gross_at_retirement": 400,
+            "taxable_share": 18,
+            "income_tax": 9.54,
+            "church_tax": 0,
+            "solidarity_surcharge": 0,
+            "after_tax": 390.46,
+            "health_care_insurance": 0,
+            "after_insurance": 390.46,
+            "purchasing_power": 195.24
+        }
+    ],
+    "totals": {
+        "gross_at_retirement": 2658.26,
+        "income_tax": 308.67,
+        "church_tax": 0,
+        "solidarity_surcharge": 0,
+        "after_tax": 2349.6,
+        "health_care_insurance": 263.34,
+        "after_insurance": 2086.26,
+        "purchasing_power": 1043.19
+    },
+    "private_health_insurance": {
+        "monthly_today": 0,
+        "monthly_at_retirement": 0,
+        "purchasing_power": 0
+    },
+    "desired_pension": {
+        "today": 5000,
+        "at_retirement": 9999.45
+    },
+    "gap": {
+        "monthly_today": 3956.81,
+        "monthly_at_retirement": 7913.18,
+        "annual_at_retirement": 94958.2
+    },
+    "capital": {
+        "years": 20,
+        "total_payments": 2307234.4,
+        "required_capital": 1683295.02,
+        "remaining_capital": 0
+    },
+    "disability": {
+        "net_income": 0,
+        "sick_pay": 0,
+        "emr_gross": 0,
+        "emr_full_net": 0,
+        "emr_half_net": 0,
+        "private_disability_pension": 0,
+        "emr_with_private_insurance": 0
+    },
     "parameters_used": {
         "economic_assumptions": {
             "inflation_rate": 2,
@@ -23,27 +113,34 @@
         },
         "social_insurance": {
             "health_insurance_rate": 7.3,
-            "additional_health_insurance_rate": 1.25,
+            "additional_health_insurance_rate": 1.45,
             "care_insurance_rate": 3.6,
-            "total_insurance_rate": 12.15,
-            "health_insurance_exemption_bav": 187.25
+            "care_insurance_childless_surcharge": 0.6,
+            "health_insurance_exemption_bav": 197.75,
+            "bbg_health_monthly": 5812.5,
+            "total_insurance_rate": 12.35
         },
         "tax_system": {
-            "rates": {
-                "stufe_1": 0,
-                "stufe_2": 14,
-                "stufe_3": 24,
-                "stufe_4": 42,
-                "stufe_5": 45
+            "income_tax_zones": {
+                "zone1_end": 12096,
+                "zone2_end": 17443,
+                "zone3_end": 68480,
+                "zone4_end": 277825,
+                "zone2_factor": 932.3,
+                "zone2_base": 1400,
+                "zone3_factor": 176.64,
+                "zone3_base": 2397,
+                "zone3_const": 1015.13,
+                "zone4_rate": 42,
+                "zone4_const": 10911.92,
+                "zone5_rate": 45,
+                "zone5_const": 19246.67,
+                "werbungskosten_pauschbetrag": 102
             },
-            "thresholds": {
-                "threshold_1": 12097,
-                "threshold_2": 17444,
-                "threshold_3": 68481,
-                "threshold_4": 277826
-            },
+            "statutory_pension_taxable_share": 84,
+            "statutory_pension_taxable_share_base_year": 2026,
             "solidarity_surcharge_rate": 5.5,
-            "solidarity_surcharge_threshold": 19450
+            "solidarity_surcharge_threshold": 20350
         },
         "regional_taxes": {
             "church_tax_bavaria_bw": 8,

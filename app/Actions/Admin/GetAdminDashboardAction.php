@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Admin;
 
+use App\Enums\RentencheckStatus;
 use App\Models\Client;
 use App\Models\Rentencheck;
 use App\Models\User;
@@ -24,7 +25,7 @@ final readonly class GetAdminDashboardAction
         $blockedAdvisors = User::advisors()->blocked()->count();
         $totalClients = Client::count();
         $totalRentenchecks = Rentencheck::count();
-        $completedRentenchecks = Rentencheck::where('status', 'completed')->count();
+        $completedRentenchecks = Rentencheck::where('status', RentencheckStatus::Completed)->count();
 
         $recentRentenchecks = Rentencheck::with(['client.user'])
             ->latest()
@@ -34,7 +35,7 @@ final readonly class GetAdminDashboardAction
                 'id' => $r->id,
                 'client_name' => $r->client->full_name,
                 'advisor_name' => $r->client->user->full_name,
-                'is_completed' => $r->status === 'completed',
+                'is_completed' => $r->status === RentencheckStatus::Completed,
                 'created_at' => $r->created_at,
             ]);
 

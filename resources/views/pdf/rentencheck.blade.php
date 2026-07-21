@@ -742,6 +742,11 @@
         </div>
         @endif
 
+        {{-- Resultate + BR/KU + Disclaimer (aus der Backend-Analyse) --}}
+        @if(!empty($analysis))
+        @include('pdf.partials.analysis-results')
+        @endif
+
         <!-- Footer -->
         <div class="footer">
             <div class="footer-logo">RENTENBLICK.de</div>

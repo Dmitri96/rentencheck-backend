@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Admin;
 
+use App\Enums\RentencheckStatus;
 use App\Models\Client;
 use App\Models\Rentencheck;
 use App\Models\User;
@@ -33,7 +34,7 @@ final readonly class GetAdvisorDetailsAction
         $totalRentenchecks = $clients->flatMap->rentenchecks;
 
         /** @var SupportCollection<int, Rentencheck> $completedRentenchecks */
-        $completedRentenchecks = $totalRentenchecks->where('status', 'completed');
+        $completedRentenchecks = $totalRentenchecks->where('status', RentencheckStatus::Completed);
 
         return [
             'advisor' => [
@@ -51,7 +52,7 @@ final readonly class GetAdvisorDetailsAction
                 'total_clients' => $clients->count(),
                 'total_rentenchecks' => $totalRentenchecks->count(),
                 'completed_rentenchecks' => $completedRentenchecks->count(),
-                'pending_rentenchecks' => $totalRentenchecks->where('status', '!=', 'completed')->count(),
+                'pending_rentenchecks' => $totalRentenchecks->where('status', '!=', RentencheckStatus::Completed)->count(),
                 'completion_rate' => $totalRentenchecks->count() > 0
                     ? round(($completedRentenchecks->count() / $totalRentenchecks->count()) * 100, 1)
                     : 0,
@@ -80,7 +81,7 @@ final readonly class GetAdvisorDetailsAction
             $monthlyStats[] = [
                 'month' => $month->format('M Y'),
                 'total' => $monthlyRentenchecks->count(),
-                'completed' => $monthlyRentenchecks->where('status', 'completed')->count(),
+                'completed' => $monthlyRentenchecks->where('status', RentencheckStatus::Completed)->count(),
             ];
         }
 

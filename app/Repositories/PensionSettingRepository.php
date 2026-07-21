@@ -84,37 +84,56 @@ final class PensionSettingRepository
 
         return [
             'health_insurance_rate' => (float) ($settings->firstWhere('key', 'health_insurance_rate')?->value ?? 7.3),
-            'additional_health_insurance_rate' => (float) ($settings->firstWhere('key', 'additional_health_insurance_rate')?->value ?? 1.25),
+            'additional_health_insurance_rate' => (float) ($settings->firstWhere('key', 'additional_health_insurance_rate')?->value ?? 1.45),
             'care_insurance_rate' => (float) ($settings->firstWhere('key', 'care_insurance_rate')?->value ?? 3.6),
-            'health_insurance_exemption_bav' => (float) ($settings->firstWhere('key', 'health_insurance_exemption_bav')?->value ?? 187.25),
+            'care_insurance_childless_surcharge' => (float) ($settings->firstWhere('key', 'care_insurance_childless_surcharge')?->value ?? 0.6),
+            'health_insurance_exemption_bav' => (float) ($settings->firstWhere('key', 'health_insurance_exemption_bav')?->value ?? 197.75),
+            'bbg_health_monthly' => (float) ($settings->firstWhere('key', 'bbg_health_monthly')?->value ?? 5812.50),
         ];
     }
 
     /**
-     * German income-tax brackets (Stufen 1–5) + thresholds.
+     * §32a EStG tariff-zone parameters (assessment-year specific) plus the
+     * Werbungskosten flat allowance for pension income.
      *
-     * @return array<string, array<string, float>>
+     * Defaults are the verified 2025 values (Steuerfortentwicklungsgesetz).
+     *
+     * @return array<string, float>
      */
-    public function getTaxBrackets(): array
+    public function getIncomeTaxParameters(): array
     {
-        $rates = $this->getByCategory('tax_brackets');
-        $thresholds = $this->getByCategory('tax_thresholds');
+        $settings = $this->getByCategory('income_tax');
+        $value = fn (string $key, float $default): float => (float) ($settings->firstWhere('key', $key)?->value ?? $default);
 
         return [
-            'rates' => [
-                'stufe_1' => (float) ($rates->firstWhere('key', 'tax_rate_stufe_1')?->value ?? 0.0),
-                'stufe_2' => (float) ($rates->firstWhere('key', 'tax_rate_stufe_2')?->value ?? 14.0),
-                'stufe_3' => (float) ($rates->firstWhere('key', 'tax_rate_stufe_3')?->value ?? 24.0),
-                'stufe_4' => (float) ($rates->firstWhere('key', 'tax_rate_stufe_4')?->value ?? 42.0),
-                'stufe_5' => (float) ($rates->firstWhere('key', 'tax_rate_stufe_5')?->value ?? 45.0),
-            ],
-            'thresholds' => [
-                'threshold_1' => (float) ($thresholds->firstWhere('key', 'tax_threshold_1')?->value ?? 12097.0),
-                'threshold_2' => (float) ($thresholds->firstWhere('key', 'tax_threshold_2')?->value ?? 17444.0),
-                'threshold_3' => (float) ($thresholds->firstWhere('key', 'tax_threshold_3')?->value ?? 68481.0),
-                'threshold_4' => (float) ($thresholds->firstWhere('key', 'tax_threshold_4')?->value ?? 277826.0),
-            ],
+            'zone1_end' => $value('income_tax_zone1_end', 12096.0),
+            'zone2_end' => $value('income_tax_zone2_end', 17443.0),
+            'zone3_end' => $value('income_tax_zone3_end', 68480.0),
+            'zone4_end' => $value('income_tax_zone4_end', 277825.0),
+            'zone2_factor' => $value('income_tax_zone2_factor', 932.30),
+            'zone2_base' => $value('income_tax_zone2_base', 1400.0),
+            'zone3_factor' => $value('income_tax_zone3_factor', 176.64),
+            'zone3_base' => $value('income_tax_zone3_base', 2397.0),
+            'zone3_const' => $value('income_tax_zone3_const', 1015.13),
+            'zone4_rate' => $value('income_tax_zone4_rate', 42.0),
+            'zone4_const' => $value('income_tax_zone4_const', 10911.92),
+            'zone5_rate' => $value('income_tax_zone5_rate', 45.0),
+            'zone5_const' => $value('income_tax_zone5_const', 19246.67),
+            'werbungskosten_pauschbetrag' => $value('werbungskosten_pauschbetrag', 102.0),
         ];
+    }
+
+    /**
+     * Besteuerungsanteil of the statutory pension by retirement year
+     * (nachgelagerte Besteuerung, AltEinkG/Wachstumschancengesetz): the seeded
+     * base cohort share rises 0.5 pp per year until it reaches 100 %.
+     */
+    public function getStatutoryTaxableShare(int $retirementYear): float
+    {
+        $baseShare = (float) ($this->getValue('statutory_pension_taxable_share') ?? 84.0);
+        $baseYear = (int) ($this->getValue('statutory_pension_taxable_share_base_year') ?? 2026);
+
+        return min(100.0, $baseShare + 0.5 * max(0, $retirementYear - $baseYear));
     }
 
     /**

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Calculators\PensionCalculator;
+use App\Enums\RentencheckStatus;
 use App\Models\Client;
 use App\Models\Rentencheck;
 use App\Models\User;
@@ -21,7 +23,7 @@ beforeEach(function (): void {
     // Bind an anonymous subclass stub into the container instead so the
     // controller receives the fake without touching dompdf at all.
     app()->bind(FileService::class, function () {
-        return new class extends FileService
+        return new class(app(PensionCalculator::class)) extends FileService
         {
             public function getRentencheckPdfContent(Rentencheck $rentencheck): array
             {
@@ -55,7 +57,7 @@ function makePdfFixture(): array
         'user_id' => $advisor->id,
         'client_id' => $client->id,
         'title' => 'Test Rentencheck',
-        'status' => 'completed',
+        'status' => RentencheckStatus::Completed,
     ]);
 
     return [$advisor, $client, $rentencheck];

@@ -17,8 +17,8 @@ declare(strict_types=1);
  * production-default rates (inflation 2%, investment 3%, etc).
  */
 
+use App\Calculators\IncomeTaxCalculator;
 use App\Calculators\PensionCalculator;
-use App\Calculators\TaxCalculator;
 use App\Models\Rentencheck;
 use App\Repositories\PensionSettingRepository;
 use Database\Seeders\PensionSettingsSeeder;
@@ -29,7 +29,7 @@ uses(LazilyRefreshDatabase::class);
 beforeEach(function (): void {
     $this->seed(PensionSettingsSeeder::class);
     $this->calculator = app(PensionCalculator::class);
-    $this->taxCalculator = app(TaxCalculator::class);
+    $this->taxCalculator = app(IncomeTaxCalculator::class);
     $this->settings = app(PensionSettingRepository::class);
 });
 
@@ -173,21 +173,52 @@ it('exposes pension parameters with seeded defaults', function (): void {
 });
 
 // ---------------------------------------------------------------------
-// German tax-bracket math
+// German income-tax math (§32a EStG progressive zones)
 // ---------------------------------------------------------------------
 
 $taxScenarios = [
-    'bracket-zero-below-allowance' => 10_000.0,
-    'bracket-1-low' => 15_000.0,
-    'bracket-2-mid' => 30_000.0,
-    'bracket-3-upper-mid' => 60_000.0,
-    'bracket-4-high' => 90_000.0,
-    'bracket-5-top' => 300_000.0,
+    'zone-0-below-allowance' => 10_000.0,
+    'zone-2-low' => 15_000.0,
+    'zone-3-mid' => 30_000.0,
+    'zone-3-upper-mid' => 60_000.0,
+    'zone-4-high' => 90_000.0,
+    'zone-5-top' => 300_000.0,
 ];
 
 foreach ($taxScenarios as $name => $income) {
-    it("locks calculateIncomeTax: {$name}", function () use ($name, $income): void {
-        $output = ['income_tax' => $this->taxCalculator->incomeTax($income, $this->settings->getTaxBrackets())];
+    it("locks annualIncomeTax: {$name}", function () use ($name, $income): void {
+        $output = ['income_tax' => $this->taxCalculator->annualIncomeTax($income, $this->settings->getIncomeTaxParameters())];
         assertMatchesGoldenMaster($output, "income_tax_{$name}");
     });
 }
+
+// ---------------------------------------------------------------------
+// Excel reference chain ("Steuer und KV für Einkommen 2025", row 19)
+// ---------------------------------------------------------------------
+
+it('reproduces the Excel reference chain for the statutory pension', function (): void {
+    // 1.000 € statutory pension today, 19 years to retirement (48 → 67).
+    $rc = makeRentencheck(
+        ['currentAge' => 48, 'retirementAge' => 67, 'pensionWishCurrentValue' => 1500],
+        ['statutoryPensionClaims' => true, 'statutoryPensionAmount' => 1000],
+    );
+
+    $output = $this->calculator->analyze($rc);
+    $statutory = collect($output['rows'])->firstWhere('key', 'statutory');
+
+    // Brutto: 1.000 × 1,01^19 = 1.208,11 (Excel C19). KV: the Excel used the
+    // 2025 Zusatzbeitrag (12,15% → 146,79); seeded 2026 rates give 12,35%.
+    expect($statutory['gross_at_retirement'])->toEqualWithDelta(1208.11, 0.01)
+        ->and($statutory['health_care_insurance'])->toEqualWithDelta(149.20, 0.01)
+        // §32a instead of the Excel's flat 42% (plan decision 1). Retirement in
+        // 2045 → cohort Besteuerungsanteil 93,5% → zvE ≈ 13.452 €, marginal tax
+        // barely above the Grundfreibetrag: ~206 €/Jahr instead of ~6.100 €.
+        ->and($statutory['income_tax'])->toBeGreaterThan(10.0)
+        ->and($statutory['income_tax'])->toBeLessThan(25.0)
+        ->and($statutory['after_insurance'])->toEqualWithDelta(1041.74, 0.5)
+        // Kaufkraft: nach-KV / 1,02^19
+        ->and($statutory['purchasing_power'])->toEqualWithDelta(715.08, 0.5);
+
+    // The cohort share itself is derived from the retirement year (84% base 2026 + 0.5 pp/Jahr).
+    expect($statutory['taxable_share'])->toEqualWithDelta(93.5, 0.01);
+});

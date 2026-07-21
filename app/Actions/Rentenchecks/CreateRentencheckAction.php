@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Rentenchecks;
 
+use App\Enums\RentencheckStatus;
 use App\Models\Client;
 use App\Models\Rentencheck;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ final readonly class CreateRentencheckAction
             $rentencheck = Rentencheck::create([
                 'user_id' => $userId,
                 'client_id' => $client->id,
-                'status' => 'draft',
+                'status' => RentencheckStatus::Draft,
                 'title' => $data['title'] ?? "Rentencheck für {$client->full_name}",
                 'notes' => $data['notes'] ?? null,
                 'completed_steps' => [],
