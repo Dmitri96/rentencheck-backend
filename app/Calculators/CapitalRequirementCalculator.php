@@ -29,7 +29,7 @@ final class CapitalRequirementCalculator
         $totalPayments = 0.0;
         $requiredCapital = 0.0;
 
-        foreach (array_values($annualGaps) as $k => $annualPayment) {
+        foreach ($annualGaps as $k => $annualPayment) {
             $totalPayments += $annualPayment;
             $requiredCapital += $annualPayment / (1 + $r) ** ($k + 1);
         }
