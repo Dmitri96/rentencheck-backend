@@ -7,9 +7,9 @@ namespace App\Services;
 use App\Calculators\PensionCalculator;
 use App\Models\File;
 use App\Models\Rentencheck;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
+use Spatie\Browsershot\Browsershot;
 
 class FileService
 {
@@ -127,13 +127,6 @@ class FileService
      */
     private function generatePdfContent(Rentencheck $rentencheck): string
     {
-        $options = new Options;
-        $options->set('defaultFont', 'DejaVu Sans');
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new Dompdf($options);
-
         // The completion snapshot pins the numbers of an issued report;
         // drafts (on-the-fly downloads) are computed with current settings.
         $analysis = $rentencheck->analysis_snapshot ?? $this->calculator->analyze($rentencheck);
@@ -146,11 +139,51 @@ class FileService
             'aspectLabels' => self::ASPECT_LABELS,
         ])->render();
 
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+        // Rendered with headless Chromium so the report matches the platform's
+        // design (real web fonts, flexbox, gradients). Margins live in the
+        // template's @page rule; waitUntilNetworkIdle lets the web fonts load.
+        $browsershot = Browsershot::html($html)
+            ->setChromePath($this->resolveChromePath())
+            ->noSandbox()
+            ->format('A4')
+            ->showBackground()
+            ->waitUntilNetworkIdle();
 
-        return $dompdf->output();
+        $node = config('services.browsershot.node_binary');
+        if (is_string($node) && $node !== '') {
+            $browsershot->setNodeBinary($node);
+        }
+
+        return $browsershot->pdf();
+    }
+
+    /**
+     * Resolve the Chromium binary Browsershot should drive.
+     *
+     * Prefers an explicit env path (production images), otherwise falls back to
+     * the Puppeteer-managed browser downloaded into storage. The glob keeps
+     * working across Chromium version bumps.
+     */
+    private function resolveChromePath(): string
+    {
+        $explicit = config('services.browsershot.chrome_path');
+        if (is_string($explicit) && $explicit !== '' && is_file($explicit)) {
+            return $explicit;
+        }
+
+        // Search both browser managers: Playwright (ships linux-arm64 builds) and
+        // Puppeteer (linux-x64). The first match wins, so images only need one.
+        foreach (['app/pw/chromium-*/chrome-linux/chrome', 'app/puppeteer/chrome/*/chrome-*/chrome'] as $pattern) {
+            $matches = glob(storage_path($pattern));
+            if ($matches !== false && $matches !== []) {
+                return $matches[0];
+            }
+        }
+
+        throw new RuntimeException(
+            'Chromium not found. Run: npx playwright install --with-deps chromium '
+            . '(PLAYWRIGHT_BROWSERS_PATH=storage/app/pw), or set BROWSERSHOT_CHROME_PATH.',
+        );
     }
 
     /**

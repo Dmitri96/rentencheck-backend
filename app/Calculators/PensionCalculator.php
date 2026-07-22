@@ -78,11 +78,39 @@ final class PensionCalculator
 
         // Privately insured clients pay their PKV premium out of the pension income.
         $pkv = $this->privateHealthInsurance($step1, $healthStatus, $inflationPct, $yearsToRetirement);
-        $availablePurchasingPower = $totals['purchasing_power'] - $pkv['purchasing_power'];
 
         $desiredToday = (float) ($step2['pensionWishCurrentValue'] ?? 0);
-        $gapToday = max(0.0, $desiredToday - $availablePurchasingPower);
-        $gapAtRetirement = $this->inflation->projectFuture($gapToday, $inflationPct, $yearsToRetirement);
+        $desiredAtRetirement = $this->inflation->projectFuture($desiredToday, $inflationPct, $yearsToRetirement);
+
+        // Year-by-year retirement projection (nominal €). The statutory group keeps
+        // pace with the Rentensteigerung while company/private pensions stay flat,
+        // and the need rises with inflation — so a gap can open mid-retirement as
+        // fixed pensions lose purchasing power. Measuring the gap only at retirement
+        // would miss that erosion; the required capital is the present value of the
+        // whole shortfall stream, not a single inflated figure.
+        $projection = $this->projectRetirement(
+            $rows,
+            $pkv['monthly_at_retirement'],
+            $desiredAtRetirement,
+            $economic['pension_increase_rate'],
+            $inflationPct,
+            $retirementAge,
+            $endAge,
+        );
+
+        $annualGaps = array_map(static fn (array $p): float => $p['gap'] * 12, $projection);
+        $gapAtRetirement = $projection[0]['gap'] ?? 0.0;
+        $last = $projection[count($projection) - 1] ?? null;
+        $gapAtEnd = $last['gap'] ?? 0.0;
+        $maxMonthlyGap = $projection === [] ? 0.0 : max(array_map(static fn (array $p): float => $p['gap'], $projection));
+        $firstGapAge = null;
+        foreach ($projection as $p) {
+            if ($p['gap'] > 0) {
+                $firstGapAge = $p['age'];
+                break;
+            }
+        }
+        $gapToday = $this->inflation->projectPurchasingPower($gapAtRetirement, $inflationPct, $yearsToRetirement);
 
         return [
             'currentAge' => $currentAge,
@@ -97,14 +125,22 @@ final class PensionCalculator
 
             'desired_pension' => [
                 'today' => round($desiredToday, 2),
-                'at_retirement' => round($this->inflation->projectFuture($desiredToday, $inflationPct, $yearsToRetirement), 2),
+                'at_retirement' => round($desiredAtRetirement, 2),
             ],
             'gap' => [
                 'monthly_today' => round($gapToday, 2),
                 'monthly_at_retirement' => round($gapAtRetirement, 2),
                 'annual_at_retirement' => round($gapAtRetirement * 12, 2),
+                // Gap in the final provision year and its worst month — a fixed
+                // pension that covers the need at 67 can fall well short by 90.
+                'monthly_at_end' => round($gapAtEnd, 2),
+                'monthly_max' => round($maxMonthlyGap, 2),
+                // First retirement age at which income no longer covers the need.
+                'first_gap_age' => $firstGapAge,
+                'has_gap' => $firstGapAge !== null,
             ],
-            'capital' => $this->capital->analyze($gapAtRetirement, $inflationPct, $economic['investment_return_rate'], $retirementAge, $endAge),
+            'retirement_projection' => $projection,
+            'capital' => $this->capital->analyze($annualGaps, $economic['investment_return_rate'], $retirementAge, $endAge),
             'disability' => $this->disability->analyze(
                 (float) ($step1['currentGrossIncome'] ?? 0),
                 (float) ($step1['currentNetIncome'] ?? 0),
@@ -184,6 +220,51 @@ final class PensionCalculator
         }
 
         return $rows;
+    }
+
+    /**
+     * Nominal net income vs inflating need for each retirement year (retirement
+     * age → provision end). The statutory group rises with the Rentensteigerung;
+     * company/private pensions stay flat. Mirrors the chart projection so the
+     * headline gap/capital and the visualisation agree.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{age: int, net_income: float, need: float, gap: float}>
+     */
+    private function projectRetirement(
+        array $rows,
+        float $pkvAtRetirement,
+        float $desiredAtRetirement,
+        float $pensionIncreasePct,
+        float $inflationPct,
+        int $retirementAge,
+        int $endAge,
+    ): array {
+        $netStatutory = 0.0;
+        $netFlat = 0.0;
+        foreach ($rows as $row) {
+            if (($row['group'] ?? '') === IncomeSource::GROUP_STATUTORY) {
+                $netStatutory += (float) $row['after_insurance'];
+            } else {
+                $netFlat += (float) $row['after_insurance'];
+            }
+        }
+
+        $projection = [];
+        $years = max(0, $endAge - $retirementAge);
+        for ($k = 0; $k < $years; $k++) {
+            $income = $netStatutory * (1 + $pensionIncreasePct / 100) ** $k + $netFlat - $pkvAtRetirement;
+            $need = $desiredAtRetirement * (1 + $inflationPct / 100) ** $k;
+
+            $projection[] = [
+                'age' => $retirementAge + $k,
+                'net_income' => round($income, 2),
+                'need' => round($need, 2),
+                'gap' => round(max(0.0, $need - $income), 2),
+            ];
+        }
+
+        return $projection;
     }
 
     /**

@@ -58,12 +58,126 @@
     "gap": {
         "monthly_today": 707.48,
         "monthly_at_retirement": 897.26,
-        "annual_at_retirement": 10767.07
+        "annual_at_retirement": 10767.12,
+        "monthly_at_end": 1592.2,
+        "monthly_max": 1592.2,
+        "first_gap_age": 67,
+        "has_gap": true
     },
+    "retirement_projection": [
+        {
+            "age": 67,
+            "net_income": 1385.58,
+            "need": 2282.84,
+            "gap": 897.26
+        },
+        {
+            "age": 68,
+            "net_income": 1397.45,
+            "need": 2328.49,
+            "gap": 931.04
+        },
+        {
+            "age": 69,
+            "net_income": 1409.44,
+            "need": 2375.06,
+            "gap": 965.63
+        },
+        {
+            "age": 70,
+            "net_income": 1421.54,
+            "need": 2422.56,
+            "gap": 1001.02
+        },
+        {
+            "age": 71,
+            "net_income": 1433.77,
+            "need": 2471.01,
+            "gap": 1037.24
+        },
+        {
+            "age": 72,
+            "net_income": 1446.12,
+            "need": 2520.43,
+            "gap": 1074.31
+        },
+        {
+            "age": 73,
+            "net_income": 1458.6,
+            "need": 2570.84,
+            "gap": 1112.25
+        },
+        {
+            "age": 74,
+            "net_income": 1471.19,
+            "need": 2622.26,
+            "gap": 1151.07
+        },
+        {
+            "age": 75,
+            "net_income": 1483.92,
+            "need": 2674.71,
+            "gap": 1190.79
+        },
+        {
+            "age": 76,
+            "net_income": 1496.77,
+            "need": 2728.2,
+            "gap": 1231.43
+        },
+        {
+            "age": 77,
+            "net_income": 1509.75,
+            "need": 2782.76,
+            "gap": 1273.01
+        },
+        {
+            "age": 78,
+            "net_income": 1522.86,
+            "need": 2838.42,
+            "gap": 1315.56
+        },
+        {
+            "age": 79,
+            "net_income": 1536.1,
+            "need": 2895.19,
+            "gap": 1359.08
+        },
+        {
+            "age": 80,
+            "net_income": 1549.48,
+            "need": 2953.09,
+            "gap": 1403.61
+        },
+        {
+            "age": 81,
+            "net_income": 1562.98,
+            "need": 3012.15,
+            "gap": 1449.17
+        },
+        {
+            "age": 82,
+            "net_income": 1576.63,
+            "need": 3072.4,
+            "gap": 1495.77
+        },
+        {
+            "age": 83,
+            "net_income": 1590.41,
+            "need": 3133.84,
+            "gap": 1543.44
+        },
+        {
+            "age": 84,
+            "net_income": 1604.32,
+            "need": 3196.52,
+            "gap": 1592.2
+        }
+    ],
     "capital": {
         "years": 18,
-        "total_payments": 230547.83,
-        "required_capital": 173409.94,
+        "total_payments": 264286.56,
+        "required_capital": 196624,
         "remaining_capital": 0
     },
     "disability": {

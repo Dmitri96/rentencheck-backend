@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // Headless-Chromium settings for the Browsershot PDF renderer. Leave the
+    // chrome path empty to auto-resolve the Puppeteer-managed browser under
+    // storage/app/puppeteer; set it explicitly in production images.
+    'browsershot' => [
+        'chrome_path' => env('BROWSERSHOT_CHROME_PATH'),
+        'node_binary' => env('BROWSERSHOT_NODE_BINARY'),
+    ],
+
 ];

@@ -7,37 +7,35 @@ namespace App\Calculators;
 /**
  * Capital requirement for closing the pension gap (MVP "Bild 3").
  *
- * The monthly gap keeps growing with inflation during retirement; the capital
- * required at retirement start is the present value of that growing payment
- * stream discounted at the investment return (payments at end of each year).
+ * Takes the actual per-year shortfall stream (which already reflects each income
+ * source's own dynamic — statutory rising, private flat — against the inflating
+ * need) and returns the capital required at retirement start: the present value
+ * of that stream discounted at the investment return (payments at year end).
  */
 final class CapitalRequirementCalculator
 {
     /**
+     * @param  list<float>  $annualGaps  nominal shortfall per retirement year (index 0 = first year)
      * @return array{years: int, total_payments: float, required_capital: float, remaining_capital: float}
      */
     public function analyze(
-        float $monthlyGapAtRetirement,
-        float $inflationPct,
+        array $annualGaps,
         float $investmentReturnPct,
         int $retirementAge,
         int $endAge,
     ): array {
-        $years = max(0, $endAge - $retirementAge);
-        $i = $inflationPct / 100;
         $r = $investmentReturnPct / 100;
 
         $totalPayments = 0.0;
         $requiredCapital = 0.0;
 
-        for ($k = 0; $k < $years; $k++) {
-            $annualPayment = 12 * $monthlyGapAtRetirement * (1 + $i) ** $k;
+        foreach (array_values($annualGaps) as $k => $annualPayment) {
             $totalPayments += $annualPayment;
             $requiredCapital += $annualPayment / (1 + $r) ** ($k + 1);
         }
 
         return [
-            'years' => $years,
+            'years' => max(0, $endAge - $retirementAge),
             'total_payments' => round($totalPayments, 2),
             'required_capital' => round($requiredCapital, 2),
             // Capital is solved so the last payment empties it — kept in the
